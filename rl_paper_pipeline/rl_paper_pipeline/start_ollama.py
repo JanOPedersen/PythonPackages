@@ -1,29 +1,4 @@
 import subprocess
-import os
-import time
-import requests
-
-def start_ollama():
-    print("Starting Ollama server...")
-    subprocess.Popen(
-        ["ollama", "serve"],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
-    ) 
-
-def wait_for_ollama(timeout=30):
-    start = time.time()
-    while time.time() - start < timeout:
-        try:
-            requests.get("http://localhost:11434/api/tags", timeout=1)
-            print("Ollama is ready.")
-            return True
-        except Exception:
-            time.sleep(0.5)
-    raise RuntimeError("Ollama did not start in time")
-
-import subprocess
 import time
 import requests
 

@@ -2,7 +2,7 @@ from .openalex_search import search_openalex_rl
 from .summarizer import summarize_paper
 from .markdown_generator import create_markdown
 from .save import save_markdown
-from .start_ollama import start_ollama, wait_for_ollama, ensure_ollama_running
+from .start_ollama import ensure_ollama_running
 
 def decode_abstract(inv_index):
     if not inv_index:
