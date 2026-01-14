@@ -1,8 +1,16 @@
 import requests
 from urllib.parse import quote
-from .config import OPENALEX_BASE, RL_CONCEPT_ID, MAX_RESULTS
+from .config import OPENALEX_BASE, MAX_RESULTS
 import ollama
 import re
+
+def find_concept_id(name):
+    url = f"https://api.openalex.org/concepts?search={quote(name)}"
+    data = requests.get(url).json()
+    results = data.get("results", [])
+    if results:
+        return results[0]["id"], results[0]["display_name"]
+    return None, None
 
 def expand_query(user_query: str, llm_model: str):
     """
@@ -59,6 +67,7 @@ def fetch_papers(terms):
     """
 
     all_results = []
+    rl_id, _ = find_concept_id("reinforcement learning")
 
     for term in terms:
         term = term.strip()
@@ -68,7 +77,7 @@ def fetch_papers(terms):
         url = (
             f"{OPENALEX_BASE}"
             f"?search={quote(term)}"
-            f"&filter=concepts.id:{RL_CONCEPT_ID}"
+            f"&filter=concepts.id:{rl_id}"
             f"&per-page={MAX_RESULTS}"
         )
 

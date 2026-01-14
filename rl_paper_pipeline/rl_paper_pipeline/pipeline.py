@@ -4,6 +4,8 @@ from .markdown_generator import create_markdown
 from .save import save_markdown
 from .start_ollama import ensure_ollama_running
 from .config import LLM_MODEL
+from .pdf_resolver import resolve_pdf
+from tqdm import tqdm
 
 def decode_abstract(inv_index):
     if not inv_index:
@@ -25,10 +27,17 @@ def run_pipeline():
     print(f"Found {len(papers)} papers")
 
     i = 0
-    for p in papers:
+    for p in tqdm(papers, desc="Processing papers", unit="paper"):
         i += 1
-        if i > 3:
-            break
+        if i > 5:
+            break  # limit to first 5 papers for testing
+
+
+        #pdf_path = resolve_pdf(p) 
+        #if pdf_path: 
+        #    print(f"PDF downloaded: {pdf_path}") 
+        #else: 
+        #    print("No PDF available for this paper.")
 
         title = p.get("title", "")
         abstract = decode_abstract(p.get("abstract_inverted_index"))
