@@ -1,101 +1,110 @@
-import ollama
-
-def summarize_paper_old(title, abstract):
-    prompt = f"""
-    Return ONLY valid JSON. No commentary. No markdown. No backticks.
-
-    Use EXACTLY this structure:
-
-    {{
-    "problem": "",
-    "method": "",
-    "key_contributions": "",
-    "architecture": "",
-    "experiments": "",
-    "limitations": "",
-    "future_work": "",
-    "relevance_score": 0.0
-    }}
-
-    Fill in the values based on the paper below.
-
-    Title: {title}
-    Abstract: {abstract}
-    """
-
-    response = ollama.chat(
-        model="mistral",
-        messages=[{"role": "user", "content": prompt}],
-        options={"format": "json"}
-    )
-
-    return response["message"]["content"]
-
-
 import json
 import ollama
+from typing import Dict, Any, Optional
 
-def summarize_paper(title, abstract):
-    system_prompt = """
-    You are a JSON-only model. 
-    You MUST return a single valid JSON object.
-    No commentary. No markdown. No backticks. No text before or after the JSON.
-    No trailing commas. No unescaped quotes.
+
+def safe_json_loads(text: str) -> Optional[Dict[str, Any]]:
+    """Attempt to parse JSON safely, returning None on failure."""
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return None
+
+
+def summarize_paper(title: str, abstract: str) -> Dict[str, Any]:
+    """
+    Robust summarizer that:
+    - requests structured JSON
+    - retries if output is empty
+    - repairs malformed JSON
+    - falls back to non-JSON mode
+    - guarantees a dict return
     """
 
-    user_prompt = f"""
-    Use EXACTLY this structure:
-
-    {{
-    "problem": "",
-    "method": "",
-    "key_contributions": "",
-    "architecture": "",
-    "experiments": "",
-    "limitations": "",
-    "future_work": "",
-    "relevance_score": 0.0
-    }}
-
-    Fill in the values based on the paper below.
+    # --- 1. Build the prompt ---
+    base_prompt = f"""
+    You are a research assistant. Summarize the following paper in structured JSON.
 
     Title: {title}
-    Abstract: {abstract}
+
+    Abstract:
+    {abstract}
+
+    Return ONLY valid JSON with the following fields:
+    - "summary"
+    - "contributions"
+    - "limitations"
+    - "future_work"
     """
 
-    # First attempt
+    # --- 2. First attempt: strict JSON mode ---
     response = ollama.chat(
         model="mistral",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ],
+        messages=[{"role": "user", "content": base_prompt}],
         options={"format": "json"}
     )
 
-    raw = response["message"]["content"].strip()
+    raw = response.get("message", {}).get("content", "").strip()
 
-    # Try parsing directly
-    try:
-        return json.loads(raw)
-    except json.JSONDecodeError:
-        pass  # fall through to repair step
+    # Empty output → retry once
+    if not raw:
+        # Optional: log this
+        print("[WARN] Empty response in strict JSON mode. Retrying...")
 
-    # If the model produced malformed JSON, repair it
-    repair_prompt = f"""
-    Fix the following JSON so that it is valid and strictly parseable.
-    Return ONLY the corrected JSON object.
+        response = ollama.chat(
+            model="mistral",
+            messages=[{"role": "user", "content": base_prompt}],
+            options={"format": "json"}
+        )
+        raw = response.get("message", {}).get("content", "").strip()
 
-    {raw}
-    """
+    # Try parsing
+    parsed = safe_json_loads(raw)
 
-    repair = ollama.chat(
-        model="mistral",
-        messages=[{"role": "user", "content": repair_prompt}],
-        options={"format": "json"}
-    )
+    # --- 3. If strict JSON failed, attempt repair ---
+    if parsed is None:
+        print("[WARN] Strict JSON mode returned invalid JSON. Attempting repair...")
 
-    repaired_raw = repair["message"]["content"].strip()
+        repair_prompt = f"""
+        The following text should be valid JSON but is malformed:
 
-    return json.loads(repaired_raw)
+        {raw}
 
+        Repair it and return ONLY valid JSON.
+        """
+
+        repair = ollama.chat(
+            model="mistral",
+            messages=[{"role": "user", "content": repair_prompt}],
+            options={"format": "json"}
+        )
+
+        repaired_raw = repair.get("message", {}).get("content", "").strip()
+        parsed = safe_json_loads(repaired_raw)
+
+    # --- 4. If still broken, fallback to non-JSON summarization ---
+    if parsed is None:
+        print("[WARN] JSON repair failed. Falling back to plain text summarization.")
+
+        fallback = ollama.chat(
+            model="mistral",
+            messages=[{"role": "user", "content": base_prompt}],
+        )
+
+        text = fallback.get("message", {}).get("content", "").strip()
+
+        # Return a minimal but valid structure
+        return {
+            "summary": text,
+            "contributions": [],
+            "limitations": [],
+            "future_work": []
+        }
+
+    # --- 5. Guarantee a dict with all expected fields ---
+    return {
+        "summary": parsed.get("summary", ""),
+        "contributions": parsed.get("contributions", []),
+        "limitations": parsed.get("limitations", []),
+        "future_work": parsed.get("future_work", [])
+    }

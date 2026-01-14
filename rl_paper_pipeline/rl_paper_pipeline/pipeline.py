@@ -24,10 +24,7 @@ def run_pipeline():
     for p in papers:
         title = p.get("title", "")
         abstract = decode_abstract(p.get("abstract_inverted_index"))
-
         print("Title:", title)
-        print("Has abstract:", bool(abstract))
-
         if not abstract:
             continue
 
