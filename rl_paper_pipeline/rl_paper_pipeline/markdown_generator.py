@@ -1,5 +1,6 @@
 import json
 import re
+from typing import Dict, Any, List
 
 def safe_json_loads(text):
     """
@@ -37,39 +38,58 @@ def safe_json_loads(text):
         cleaned = cleaned.replace(", }", "}")
         return json.loads(cleaned)
 
+def yaml_list(items: List[str]) -> str:
+    """Convert a Python list of strings into a YAML list."""
+    if not items:
+        return "[]"
+    return "\n".join([f"  - {item}" for item in items])
 
-def create_markdown(paper, summary):
-    # summary is already a dict
-    md = f"""---
-    title: "{paper.get('title', '')}"
-    authors: {[a['author']['display_name'] for a in paper.get('authorships', [])]}
-    year: {paper.get('publication_year', '')}
-    venue: "{paper.get('host_venue', {}).get('display_name', '')}"
-    ---
 
-    ## Problem
-    {summary.get('problem', '')}
+def sanitize_title(title: str) -> str:
+    """Sanitize title for safe Obsidian filenames."""
+    return re.sub(r'[\\/*?:"<>|]', "", title).strip()
 
-    ## Method
-    {summary.get('method', '')}
 
-    ## Key Contributions
-    {summary.get('key_contributions', '')}
-
-    ## Architecture
-    {summary.get('architecture', '')}
-
-    ## Experiments
-    {summary.get('experiments', '')}
-
-    ## Limitations
-    {summary.get('limitations', '')}
-
-    ## Future Work
-    {summary.get('future_work', '')}
-
-    ## Relevance Score
-    {summary.get('relevance_score', '')}
+def create_markdown(paper: Dict[str, Any], summary: Dict[str, Any]) -> str:
     """
-    return md
+    Create Obsidian-friendly Markdown with valid YAML front matter.
+    `paper` is the OpenAlex metadata.
+    `summary` is the structured dict from summarize_paper().
+    """
 
+    title = paper.get("title", "Untitled")
+    authors = paper.get("authorships", [])
+    year = paper.get("publication_year", "")
+    venue = paper.get("host_venue", {}).get("display_name", "")
+
+    # Extract author names
+    author_names = [a["author"]["display_name"] for a in authors if "author" in a]
+
+    # YAML front matter
+    front_matter = f"""---
+title: "{title}"
+authors:
+{yaml_list(author_names)}
+year: {year}
+venue: "{venue}"
+---
+"""
+
+    # Helper to conditionally add sections
+    def section(header: str, content: Any) -> str:
+        if not content:
+            return ""
+        if isinstance(content, list):
+            if not content:
+                return ""
+            content = "\n".join([f"- {item}" for item in content])
+        return f"## {header}\n{content}\n\n"
+
+    md = front_matter
+
+    md += section("Summary", summary.get("summary"))
+    md += section("Key Contributions", summary.get("contributions"))
+    md += section("Limitations", summary.get("limitations"))
+    md += section("Future Work", summary.get("future_work"))
+
+    return md.strip()
