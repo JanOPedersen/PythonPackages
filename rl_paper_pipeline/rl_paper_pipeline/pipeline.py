@@ -21,11 +21,7 @@ def run_pipeline():
     ensure_ollama_running()
     print("Ollama server is ready.")
 
-    i = 1
     for p in papers:
-        i += 1
-        if i > 2:
-            break
         title = p.get("title", "")
         abstract = decode_abstract(p.get("abstract_inverted_index"))
 
