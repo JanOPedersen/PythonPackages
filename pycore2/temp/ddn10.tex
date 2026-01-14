@@ -1,0 +1,433 @@
+
+\documentclass[border=8pt, multi, tikz]{standalone} 
+\usepackage{import}
+\subimport{/home/jan/Projects/Python Packages/pycore2/layers/}{init}
+\usetikzlibrary{positioning}
+\usetikzlibrary{3d} %for including external image 
+
+\def\ConvColor{rgb:yellow,5;red,2.5;white,5}
+\def\ConvReluColor{rgb:yellow,5;red,5;white,5}
+\def\PoolColor{rgb:red,1;black,0.3}
+\def\UnpoolColor{rgb:blue,2;green,1;black,0.3}
+\def\FcColor{rgb:blue,5;red,2.5;white,5}
+\def\FcReluColor{rgb:blue,5;red,5;white,4}
+\def\SoftmaxColor{rgb:magenta,5;black,7}   
+\def\SumColor{rgb:blue,5;green,15}
+
+\newcommand{\copymidarrow}{\tikz \draw[-Stealth,line width=0.8mm,draw={rgb:blue,4;red,1;green,1;black,3}] (-0.3,0) -- ++(0.3,0);}
+
+\begin{document}
+\begin{tikzpicture}
+\tikzstyle{connection}=[ultra thick,every node/.style={sloped,allow upside down},draw=\edgecolor,opacity=0.7]
+\tikzstyle{copyconnection}=[ultra thick,every node/.style={sloped,allow upside down},draw={rgb:blue,4;red,1;green,1;black,3},opacity=0.7]
+
+\node[canvas is zy plane at x=0] (temp) at (-3,0,0) {\includegraphics[width=8cm,height=8cm]{train-volume00.jpg}};
+
+\pic[shift={ (0,0,0) }] at (0,0,0) 
+    {RightBandedBox={
+        name=conv1,
+        caption= ,
+        xlabel={{ "64","" }},
+        zlabel=570,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=40,
+        width={ 3,0 },
+        depth=40
+        }
+    };
+
+\pic[shift={ (0,0,0) }] at (conv1-east) 
+    {RightBandedBox={
+        name=conv2,
+        caption= ,
+        xlabel={{ "64","" }},
+        zlabel=568,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=39,
+        width={ 3,0 },
+        depth=39
+        }
+    };
+
+\pic[shift={ (0,0,0) }] at (conv2-east) 
+    {Box={
+        name=pool1,
+        caption= ,
+        fill=\PoolColor,
+        opacity=0.5,
+        height=34,
+        width=1,
+        depth=34
+        }
+    };
+
+\pic[shift={ (2,0,0) }] at (pool1-east) 
+    {RightBandedBox={
+        name=conv3,
+        caption= ,
+        xlabel={{ "128","" }},
+        zlabel=282,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=33,
+        width={ 5,0 },
+        depth=33
+        }
+    };
+
+\draw [connection]  (pool1-east)    -- node {\midarrow} (conv3-west);
+
+\pic[shift={ (0,0,0) }] at (conv3-east) 
+    {RightBandedBox={
+        name=conv4,
+        caption= ,
+        xlabel={{ "128","" }},
+        zlabel=280,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=32,
+        width={ 5,0 },
+        depth=32
+        }
+    };
+
+\pic[shift={ (0,0,0) }] at (conv4-east) 
+    {Box={
+        name=pool2,
+        caption= ,
+        fill=\PoolColor,
+        opacity=0.5,
+        height=26,
+        width=1,
+        depth=26
+        }
+    };
+
+\pic[shift={ (2,0,0) }] at (pool2-east) 
+    {RightBandedBox={
+        name=conv5,
+        caption= ,
+        xlabel={{ "256","" }},
+        zlabel=138,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=25,
+        width={ 7,0 },
+        depth=25
+        }
+    };
+
+\draw [connection]  (pool2-east)    -- node {\midarrow} (conv5-west);
+
+\pic[shift={ (0,0,0) }] at (conv5-east) 
+    {RightBandedBox={
+        name=conv6,
+        caption= ,
+        xlabel={{ "256","" }},
+        zlabel=136,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=24,
+        width={ 7,0 },
+        depth=24
+        }
+    };
+
+\pic[shift={ (0,0,0) }] at (conv6-east) 
+    {Box={
+        name=pool3,
+        caption= ,
+        fill=\PoolColor,
+        opacity=0.5,
+        height=19,
+        width=1,
+        depth=19
+        }
+    };
+
+\pic[shift={ (2,0,0) }] at (pool3-east) 
+    {RightBandedBox={
+        name=conv7,
+        caption= ,
+        xlabel={{ "512","" }},
+        zlabel=66,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=17,
+        width={ 9,0 },
+        depth=17
+        }
+    };
+
+\draw [connection]  (pool3-east)    -- node {\midarrow} (conv7-west);
+
+\pic[shift={ (0,0,0) }] at (conv7-east) 
+    {RightBandedBox={
+        name=conv8,
+        caption= ,
+        xlabel={{ "512","" }},
+        zlabel=64,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=16,
+        width={ 9,0 },
+        depth=16
+        }
+    };
+
+\pic[shift={ (0,0,0) }] at (conv8-east) 
+    {Box={
+        name=pool4,
+        caption= ,
+        fill=\PoolColor,
+        opacity=0.5,
+        height=11,
+        width=1,
+        depth=11
+        }
+    };
+
+\pic[shift={ (2,0,0) }] at (pool4-east) 
+    {RightBandedBox={
+        name=conv9,
+        caption= ,
+        xlabel={{ "1024","" }},
+        zlabel=30,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=10,
+        width={ 10,0 },
+        depth=10
+        }
+    };
+
+\draw [connection]  (pool4-east)    -- node {\midarrow} (conv9-west);
+
+\pic[shift={ (0,0,0) }] at (conv9-east) 
+    {RightBandedBox={
+        name=conv10,
+        caption= ,
+        xlabel={{ "1024","" }},
+        zlabel=28,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=8,
+        width={ 10,0 },
+        depth=8
+        }
+    };
+
+\pic[shift={ (2,0,0) }] at (conv10-east) 
+    {Box={
+        name=unpool1,
+        caption= ,
+        fill=\UnpoolColor,
+        opacity=0.5,
+        height=15,
+        width=1,
+        depth=15
+        }
+    };
+
+\draw [connection]  (conv10-east)    -- node {\midarrow} (unpool1-west);
+
+\pic[shift={ (0,0,0) }] at (unpool1-east) 
+    {RightBandedBox={
+        name=conv11,
+        caption= ,
+        xlabel={{ "512","" }},
+        zlabel=54,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=14,
+        width={ 9,0 },
+        depth=14
+        }
+    };
+
+\path (conv8-southeast) -- (conv8-northeast) coordinate[pos=1.25] (conv8-top) ;
+\path (conv11-south)  -- (conv11-north)  coordinate[pos=1.25] (conv11-top) ;
+\draw [copyconnection]  (conv8-northeast)  
+-- node {\copymidarrow}(conv8-top)
+-- node {\copymidarrow}(conv11-top)
+-- node {\copymidarrow} (conv11-north);
+
+\pic[shift={ (0,0,0) }] at (conv11-east) 
+    {RightBandedBox={
+        name=conv12,
+        caption= ,
+        xlabel={{ "512","" }},
+        zlabel=52,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=12,
+        width={ 9,0 },
+        depth=12
+        }
+    };
+
+\pic[shift={ (2,0,0) }] at (conv12-east) 
+    {Box={
+        name=unpool2,
+        caption= ,
+        fill=\UnpoolColor,
+        opacity=0.5,
+        height=23,
+        width=1,
+        depth=23
+        }
+    };
+
+\draw [connection]  (conv12-east)    -- node {\midarrow} (unpool2-west);
+
+\pic[shift={ (0,0,0) }] at (unpool2-east) 
+    {RightBandedBox={
+        name=conv13,
+        caption= ,
+        xlabel={{ "256","" }},
+        zlabel=102,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=21,
+        width={ 7,0 },
+        depth=21
+        }
+    };
+
+\path (conv6-southeast) -- (conv6-northeast) coordinate[pos=1.25] (conv6-top) ;
+\path (conv13-south)  -- (conv13-north)  coordinate[pos=1.25] (conv13-top) ;
+\draw [copyconnection]  (conv6-northeast)  
+-- node {\copymidarrow}(conv6-top)
+-- node {\copymidarrow}(conv13-top)
+-- node {\copymidarrow} (conv13-north);
+
+\pic[shift={ (0,0,0) }] at (conv13-east) 
+    {RightBandedBox={
+        name=conv14,
+        caption= ,
+        xlabel={{ "256","" }},
+        zlabel=100,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=20,
+        width={ 7,0 },
+        depth=20
+        }
+    };
+
+\pic[shift={ (2,0,0) }] at (conv14-east) 
+    {Box={
+        name=unpool3,
+        caption= ,
+        fill=\UnpoolColor,
+        opacity=0.5,
+        height=30,
+        width=1,
+        depth=30
+        }
+    };
+
+\draw [connection]  (conv14-east)    -- node {\midarrow} (unpool3-west);
+
+\pic[shift={ (0,0,0) }] at (unpool3-east) 
+    {RightBandedBox={
+        name=conv15,
+        caption= ,
+        xlabel={{ "128","" }},
+        zlabel=198,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=29,
+        width={ 5,0 },
+        depth=29
+        }
+    };
+
+\path (conv4-southeast) -- (conv4-northeast) coordinate[pos=1.25] (conv4-top) ;
+\path (conv15-south)  -- (conv15-north)  coordinate[pos=1.25] (conv15-top) ;
+\draw [copyconnection]  (conv4-northeast)  
+-- node {\copymidarrow}(conv4-top)
+-- node {\copymidarrow}(conv15-top)
+-- node {\copymidarrow} (conv15-north);
+
+\pic[shift={ (0,0,0) }] at (conv15-east) 
+    {RightBandedBox={
+        name=conv16,
+        caption= ,
+        xlabel={{ "128","" }},
+        zlabel=196,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=28,
+        width={ 5,0 },
+        depth=28
+        }
+    };
+
+\pic[shift={ (2,0,0) }] at (conv16-east) 
+    {Box={
+        name=unpool4,
+        caption= ,
+        fill=\UnpoolColor,
+        opacity=0.5,
+        height=38,
+        width=1,
+        depth=38
+        }
+    };
+
+\draw [connection]  (conv16-east)    -- node {\midarrow} (unpool4-west);
+
+\pic[shift={ (0,0,0) }] at (unpool4-east) 
+    {RightBandedBox={
+        name=conv17,
+        caption= ,
+        xlabel={{ "64","" }},
+        zlabel=390,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=37,
+        width={ 3,0 },
+        depth=37
+        }
+    };
+
+\path (conv2-southeast) -- (conv2-northeast) coordinate[pos=1.25] (conv2-top) ;
+\path (conv17-south)  -- (conv17-north)  coordinate[pos=1.25] (conv17-top) ;
+\draw [copyconnection]  (conv2-northeast)  
+-- node {\copymidarrow}(conv2-top)
+-- node {\copymidarrow}(conv17-top)
+-- node {\copymidarrow} (conv17-north);
+
+\pic[shift={ (0,0,0) }] at (conv17-east) 
+    {RightBandedBox={
+        name=conv18,
+        caption= ,
+        xlabel={{ "64","" }},
+        zlabel=388,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=35,
+        width={ 3,0 },
+        depth=35
+        }
+    };
+
+\pic[shift={ (0,0,0) }] at (conv18-east) 
+    {RightBandedBox={
+        name=conv19,
+        caption= ,
+        xlabel={{ "2","" }},
+        zlabel=388,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=35,
+        width={ 1,0 },
+        depth=35
+        }
+    };
+
+\end{tikzpicture}
+\end{document}

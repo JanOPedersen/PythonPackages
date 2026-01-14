@@ -1,0 +1,418 @@
+
+\documentclass[border=8pt, multi, tikz]{standalone} 
+\usepackage{import}
+\subimport{/home/jan/Projects/Python Packages/pycore2/layers/}{init}
+\usetikzlibrary{positioning}
+\usetikzlibrary{3d} %for including external image 
+
+\def\ConvColor{rgb:yellow,5;red,2.5;white,5}
+\def\ConvReluColor{rgb:yellow,5;red,5;white,5}
+\def\PoolColor{rgb:red,1;black,0.3}
+\def\UnpoolColor{rgb:blue,2;green,1;black,0.3}
+\def\FcColor{rgb:blue,5;red,2.5;white,5}
+\def\FcReluColor{rgb:blue,5;red,5;white,4}
+\def\SoftmaxColor{rgb:magenta,5;black,7}   
+\def\SumColor{rgb:blue,5;green,15}
+
+\newcommand{\copymidarrow}{\tikz \draw[-Stealth,line width=0.8mm,draw={rgb:blue,4;red,1;green,1;black,3}] (-0.3,0) -- ++(0.3,0);}
+
+\begin{document}
+\begin{tikzpicture}
+\tikzstyle{connection}=[ultra thick,every node/.style={sloped,allow upside down},draw=\edgecolor,opacity=0.7]
+\tikzstyle{copyconnection}=[ultra thick,every node/.style={sloped,allow upside down},draw={rgb:blue,4;red,1;green,1;black,3},opacity=0.7]
+
+\pic[shift={ (0,0,0) }] at (0,0,0) 
+    {RightBandedBox={
+        name=conv1,
+        caption= ,
+        xlabel={{ "64","" }},
+        zlabel=112,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=40,
+        width={ 4,0 },
+        depth=40
+        }
+    };
+
+\pic[shift={ (0,0,0) }] at (conv1-east) 
+    {Box={
+        name=pool1,
+        caption= ,
+        fill=\PoolColor,
+        opacity=0.5,
+        height=34,
+        width=1,
+        depth=34
+        }
+    };
+
+\pic[shift={ (2,0,0) }] at (pool1-east) 
+    {RightBandedBox={
+        name=conv2,
+        caption= ,
+        xlabel={{ "64","" }},
+        zlabel=56,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=34,
+        width={ 4,0 },
+        depth=34
+        }
+    };
+
+\draw [connection]  (pool1-east)    -- node {\midarrow} (conv2-west);
+
+\pic[shift={ (0,0,0) }] at (conv2-east) 
+    {RightBandedBox={
+        name=conv3,
+        caption= ,
+        xlabel={{ "64","" }},
+        zlabel=56,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=34,
+        width={ 4,0 },
+        depth=34
+        }
+    };
+
+\pic[shift={(0.9,0,0)}] at (conv3-east) 
+    {Ball={
+        name=add1,
+        fill=\SumColor,
+        opacity=0.6,
+        radius=2.5,
+        logo=$+$
+        }
+    };
+
+\draw [connection]  (conv3-east)    -- node {\midarrow} (add1-west);
+
+\pic[shift={ (0.9,0,0) }] at (add1-east) 
+    {RightBandedBox={
+        name=conv4,
+        caption= ,
+        xlabel={{ "64","" }},
+        zlabel=56,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=34,
+        width={ 4,0 },
+        depth=34
+        }
+    };
+
+\draw [connection]  (add1-east)    -- node {\midarrow} (conv4-west);
+
+\pic[shift={ (0,0,0) }] at (conv4-east) 
+    {RightBandedBox={
+        name=conv5,
+        caption= ,
+        xlabel={{ "64","" }},
+        zlabel=56,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=34,
+        width={ 4,0 },
+        depth=34
+        }
+    };
+
+\pic[shift={(0.9,0,0)}] at (conv5-east) 
+    {Ball={
+        name=add2,
+        fill=\SumColor,
+        opacity=0.6,
+        radius=2.5,
+        logo=$+$
+        }
+    };
+
+\draw [connection]  (conv5-east)    -- node {\midarrow} (add2-west);
+
+\pic[shift={ (0.9,0,0) }] at (add2-east) 
+    {RightBandedBox={
+        name=conv6,
+        caption= ,
+        xlabel={{ "128","" }},
+        zlabel=28,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=28,
+        width={ 6,0 },
+        depth=28
+        }
+    };
+
+\draw [connection]  (add2-east)    -- node {\midarrow} (conv6-west);
+
+\pic[shift={ (0,0,0) }] at (conv6-east) 
+    {RightBandedBox={
+        name=conv7,
+        caption= ,
+        xlabel={{ "128","" }},
+        zlabel=28,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=28,
+        width={ 6,0 },
+        depth=28
+        }
+    };
+
+\pic[shift={(0.9,0,0)}] at (conv7-east) 
+    {Ball={
+        name=add3,
+        fill=\SumColor,
+        opacity=0.6,
+        radius=2.5,
+        logo=$+$
+        }
+    };
+
+\draw [connection]  (conv7-east)    -- node {\midarrow} (add3-west);
+
+\pic[shift={ (0.9,0,0) }] at (add3-east) 
+    {RightBandedBox={
+        name=conv8,
+        caption= ,
+        xlabel={{ "128","" }},
+        zlabel=28,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=28,
+        width={ 6,0 },
+        depth=28
+        }
+    };
+
+\draw [connection]  (add3-east)    -- node {\midarrow} (conv8-west);
+
+\pic[shift={ (0,0,0) }] at (conv8-east) 
+    {RightBandedBox={
+        name=conv9,
+        caption= ,
+        xlabel={{ "128","" }},
+        zlabel=28,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=28,
+        width={ 6,0 },
+        depth=28
+        }
+    };
+
+\pic[shift={(0.9,0,0)}] at (conv9-east) 
+    {Ball={
+        name=add4,
+        fill=\SumColor,
+        opacity=0.6,
+        radius=2.5,
+        logo=$+$
+        }
+    };
+
+\draw [connection]  (conv9-east)    -- node {\midarrow} (add4-west);
+
+\pic[shift={ (0.9,0,0) }] at (add4-east) 
+    {RightBandedBox={
+        name=conv10,
+        caption= ,
+        xlabel={{ "256","" }},
+        zlabel=14,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=21,
+        width={ 8,0 },
+        depth=21
+        }
+    };
+
+\draw [connection]  (add4-east)    -- node {\midarrow} (conv10-west);
+
+\pic[shift={ (0,0,0) }] at (conv10-east) 
+    {RightBandedBox={
+        name=conv11,
+        caption= ,
+        xlabel={{ "256","" }},
+        zlabel=14,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=21,
+        width={ 8,0 },
+        depth=21
+        }
+    };
+
+\pic[shift={(0.9,0,0)}] at (conv11-east) 
+    {Ball={
+        name=add5,
+        fill=\SumColor,
+        opacity=0.6,
+        radius=2.5,
+        logo=$+$
+        }
+    };
+
+\draw [connection]  (conv11-east)    -- node {\midarrow} (add5-west);
+
+\pic[shift={ (0.9,0,0) }] at (add5-east) 
+    {RightBandedBox={
+        name=conv12,
+        caption= ,
+        xlabel={{ "256","" }},
+        zlabel=14,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=21,
+        width={ 8,0 },
+        depth=21
+        }
+    };
+
+\draw [connection]  (add5-east)    -- node {\midarrow} (conv12-west);
+
+\pic[shift={ (0,0,0) }] at (conv12-east) 
+    {RightBandedBox={
+        name=conv13,
+        caption= ,
+        xlabel={{ "256","" }},
+        zlabel=14,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=21,
+        width={ 8,0 },
+        depth=21
+        }
+    };
+
+\pic[shift={(0.9,0,0)}] at (conv13-east) 
+    {Ball={
+        name=add6,
+        fill=\SumColor,
+        opacity=0.6,
+        radius=2.5,
+        logo=$+$
+        }
+    };
+
+\draw [connection]  (conv13-east)    -- node {\midarrow} (add6-west);
+
+\pic[shift={ (0.9,0,0) }] at (add6-east) 
+    {RightBandedBox={
+        name=conv14,
+        caption= ,
+        xlabel={{ "512","" }},
+        zlabel=7,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=15,
+        width={ 10,0 },
+        depth=15
+        }
+    };
+
+\draw [connection]  (add6-east)    -- node {\midarrow} (conv14-west);
+
+\pic[shift={ (0,0,0) }] at (conv14-east) 
+    {RightBandedBox={
+        name=conv15,
+        caption= ,
+        xlabel={{ "512","" }},
+        zlabel=7,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=15,
+        width={ 10,0 },
+        depth=15
+        }
+    };
+
+\pic[shift={(0.9,0,0)}] at (conv15-east) 
+    {Ball={
+        name=add7,
+        fill=\SumColor,
+        opacity=0.6,
+        radius=2.5,
+        logo=$+$
+        }
+    };
+
+\draw [connection]  (conv15-east)    -- node {\midarrow} (add7-west);
+
+\pic[shift={ (0.9,0,0) }] at (add7-east) 
+    {RightBandedBox={
+        name=conv16,
+        caption= ,
+        xlabel={{ "512","" }},
+        zlabel=7,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=15,
+        width={ 10,0 },
+        depth=15
+        }
+    };
+
+\draw [connection]  (add7-east)    -- node {\midarrow} (conv16-west);
+
+\pic[shift={ (0,0,0) }] at (conv16-east) 
+    {RightBandedBox={
+        name=conv17,
+        caption= ,
+        xlabel={{ "512","" }},
+        zlabel=7,
+        fill=\ConvColor,
+        bandfill=\ConvReluColor,
+        height=15,
+        width={ 10,0 },
+        depth=15
+        }
+    };
+
+\pic[shift={(0.9,0,0)}] at (conv17-east) 
+    {Ball={
+        name=add8,
+        fill=\SumColor,
+        opacity=0.6,
+        radius=2.5,
+        logo=$+$
+        }
+    };
+
+\draw [connection]  (conv17-east)    -- node {\midarrow} (add8-west);
+
+\pic[shift={(0.9,0,0)}] at (add8-east) 
+    {RightBandedBox={
+        name=linear1,
+        caption=fc1,
+        xlabel={{"", }},
+        zlabel=128,
+        fill=\FcColor,
+        bandfill=\FcReluColor,
+        height=3,
+        width=3,
+        depth=36
+        }
+    };
+
+\draw [connection]  (add8-east)    -- node {\midarrow} (linear1-west);
+
+\pic[shift={(2,0,0)}] at (linear1-east) 
+    {Box={
+        name=linear2,
+        caption=fc2,
+        xlabel={{"", }},
+        zlabel=1,
+        fill=\FcColor,
+        height=3,
+        width=3,
+        depth=8
+        }
+    };
+
+\draw [connection]  (linear1-east)    -- node {\midarrow} (linear2-west);
+
+\end{tikzpicture}
+\end{document}
