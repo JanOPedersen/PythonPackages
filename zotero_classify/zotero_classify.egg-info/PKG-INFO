@@ -1,0 +1,27 @@
+Metadata-Version: 2.4
+Name: zotero_classify
+Version: 0.1.0
+Summary: Convert Zotero hierarchy JSON into compact Dewey-like Markdown tables
+Author-email: Jan <example@example.com>
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+
+# zotero_classify
+
+Convert Zotero-style hierarchical JSON into compact Dewey-like Markdown tables.
+
+## Install
+
+pip install .
+
+
+## Usage
+
+zotero-classify hierarchy.json  hierarchy.md
+
+
+## Import in Python
+
+```python
+from zotero_classify import parse_json_to_markdown
+parse_json_to_markdown("hierarchy.json", "hierarchy.md")

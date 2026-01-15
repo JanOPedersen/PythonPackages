@@ -1,0 +1,10 @@
+[project]
+name = "zotero_classify"
+version = "0.1.0"
+description = "Convert Zotero hierarchy JSON into compact Dewey-like Markdown tables"
+authors = [{ name = "Jan", email = "example@example.com" }]
+readme = "README.md"
+requires-python = ">=3.10"
+
+[project.scripts]
+zotero-classify = "zotero_classify.cli:main"

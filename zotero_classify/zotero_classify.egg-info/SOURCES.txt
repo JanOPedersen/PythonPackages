@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+zotero_classify/__init__.py
+zotero_classify/cli.py
+zotero_classify/parser.py
+zotero_classify.egg-info/PKG-INFO
+zotero_classify.egg-info/SOURCES.txt
+zotero_classify.egg-info/dependency_links.txt
+zotero_classify.egg-info/entry_points.txt
+zotero_classify.egg-info/top_level.txt
