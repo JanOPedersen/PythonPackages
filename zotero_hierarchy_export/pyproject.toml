@@ -1,0 +1,9 @@
+[project]
+name = "zotero_hierarchy_export"
+version = "0.1.0"
+description = "Export Zotero collection hierarchy to JSON"
+authors = [{ name = "Jan" }]
+requires-python = ">=3.9"
+
+[project.scripts]
+zotero-export = "zotero_hierarchy_export.cli:main"

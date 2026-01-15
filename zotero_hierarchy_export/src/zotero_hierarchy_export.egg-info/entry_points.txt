@@ -1,0 +1,2 @@
+[console_scripts]
+zotero-export = zotero_hierarchy_export.cli:main
