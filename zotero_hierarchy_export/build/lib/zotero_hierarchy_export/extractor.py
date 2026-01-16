@@ -15,8 +15,10 @@ def connect_db(db_path: Path):
 # ------------------------------------------------------------
 def fetch_collections(conn):
     query = """
-    SELECT collectionID, collectionName, parentCollectionID, key
-    FROM collections
+    SELECT c.collectionID, c.collectionName, c.parentCollectionID, c.key
+    FROM collections c
+    LEFT JOIN deletedCollections d ON c.collectionID = d.collectionID
+    WHERE d.collectionID IS NULL
     """
     rows = conn.execute(query).fetchall()
 
@@ -31,6 +33,7 @@ def fetch_collections(conn):
         }
         for r in rows
     ]
+
 
 
 def fetch_items_for_collections(conn):

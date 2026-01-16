@@ -33,6 +33,10 @@ def build_code(parent_code: str | None, num: str) -> str:
 
 
 def compact_code(code: str) -> str:
+    # Temporary hack: strip leading 'books' if present
+    if code.startswith("books"):
+        code = code[len("books"):]
+
     raw = code.replace(".", "")
 
     if not raw.isdigit():
