@@ -1,0 +1,10 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pdf_resolver"
+version = "0.1.0"
+description = "PDF resolver utilities"
+authors = [{ name = "Jan" }]
+dependencies = []

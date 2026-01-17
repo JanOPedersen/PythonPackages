@@ -1,0 +1,11 @@
+pyproject.toml
+pdf_resolver/__init__.py
+pdf_resolver/download.py
+pdf_resolver/extract.py
+pdf_resolver/quality.py
+pdf_resolver/resolve.py
+pdf_resolver/resolver_types.py
+pdf_resolver.egg-info/PKG-INFO
+pdf_resolver.egg-info/SOURCES.txt
+pdf_resolver.egg-info/dependency_links.txt
+pdf_resolver.egg-info/top_level.txt

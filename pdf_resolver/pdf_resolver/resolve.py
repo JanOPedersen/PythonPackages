@@ -1,6 +1,6 @@
 # pdf_resolver/resolve.py
 from typing import Optional, Any
-from .types import PDFResolutionResult
+from .resolver_types import PDFResolutionResult
 from .download import download_pdf
 from .extract import extract_text_from_pdf
 from .quality import compute_extraction_quality

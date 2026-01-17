@@ -1,4 +1,4 @@
-# pdf_resolver/types.py
+# pdf_resolver/resolver_types.py
 from dataclasses import dataclass
 from typing import Optional
 
