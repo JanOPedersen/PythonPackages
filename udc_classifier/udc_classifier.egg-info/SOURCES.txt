@@ -1,0 +1,12 @@
+README.md
+pyproject.toml
+udc_classifier/__init__.py
+udc_classifier/dataset_builder.py
+udc_classifier/hierarchy.py
+udc_classifier/model.py
+udc_classifier/pdf_extractor.py
+udc_classifier.egg-info/PKG-INFO
+udc_classifier.egg-info/SOURCES.txt
+udc_classifier.egg-info/dependency_links.txt
+udc_classifier.egg-info/requires.txt
+udc_classifier.egg-info/top_level.txt

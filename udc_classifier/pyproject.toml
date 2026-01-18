@@ -1,0 +1,17 @@
+[project]
+name = "udc_classifier"
+version = "0.1.0"
+description = "UDC PDF classifier"
+authors = [{ name = "Jan" }]
+requires-python = ">=3.9"
+
+dependencies = [
+    "pymupdf",
+    "scikit-learn",
+    "tqdm",
+    "joblib"
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
