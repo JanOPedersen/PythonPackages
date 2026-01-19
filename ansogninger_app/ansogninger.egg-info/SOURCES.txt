@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+ansogninger/__init__.py
+ansogninger/app.py
+ansogninger.egg-info/PKG-INFO
+ansogninger.egg-info/SOURCES.txt
+ansogninger.egg-info/dependency_links.txt
+ansogninger.egg-info/entry_points.txt
+ansogninger.egg-info/requires.txt
+ansogninger.egg-info/top_level.txt

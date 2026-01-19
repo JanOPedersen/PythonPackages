@@ -1,0 +1,12 @@
+ [project]
+name = "ansogninger"
+version = "1.0.0"
+description = "Job application database manager"
+authors = [{ name = "Jan O Pedersn" }]
+requires-python = ">=3.10"
+dependencies = [
+    "tkcalendar",
+]
+
+[project.scripts]
+ansogninger = "ansogninger.app:main"
