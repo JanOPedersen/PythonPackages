@@ -1,4 +1,87 @@
 import requests
+from typing import List, Dict
+
+def fetch_openalex_batch(work_ids: List[str]) -> Dict[str, dict]:
+    """
+    Fetch metadata for up to 50 OpenAlex work IDs in one request.
+    Returns a dict mapping work_id -> metadata dict.
+    """
+    # Normalize IDs: keep only the Wxxxx part
+    normalized = [
+        wid.replace("https://openalex.org/", "")
+        for wid in work_ids
+    ]
+
+    # Build filter string
+    filter_ids = "|".join(normalized)
+    url = f"https://api.openalex.org/works?filter=ids.openalex:{filter_ids}"
+
+    try:
+        r = requests.get(url, timeout=20)
+        r.raise_for_status()
+        data = r.json()
+    except Exception:
+        return {}
+
+    results = {}
+    for item in data.get("results", []):
+        wid = item["id"].replace("https://openalex.org/", "")
+        results[wid] = item
+
+    return results
+
+def enrich_openalex_references_batched(ref_ids: List[str]) -> List[dict]:
+    """
+    Enrich OpenAlex reference IDs using batched API calls.
+    Returns a list of structured reference dicts.
+    """
+    # Normalize IDs
+    normalized = [
+        rid.replace("https://openalex.org/", "")
+        for rid in ref_ids
+    ]
+
+    enriched = []
+
+    # Process in batches of 50
+    for i in range(0, len(normalized), 50):
+        batch = normalized[i:i+50]
+        batch_meta = fetch_openalex_batch(batch)
+
+        for wid in batch:
+            meta = batch_meta.get(wid)
+            if not meta:
+                enriched.append({"id": f"https://openalex.org/{wid}"})
+                continue
+
+            # Extract authors
+            authors = []
+            for a in meta.get("authorships", []):
+                name = a.get("author", {}).get("display_name")
+                if name:
+                    authors.append({"name": name})
+
+            # Extract venue
+            venue = None
+            if meta.get("host_venue", {}).get("display_name"):
+                venue = meta["host_venue"]["display_name"]
+
+            # Extract DOI
+            doi = None
+            if meta.get("doi"):
+                doi = meta["doi"].replace("https://doi.org/", "")
+
+            enriched.append({
+                "title": meta.get("title"),
+                "authors": authors,
+                "year": meta.get("publication_year"),
+                "identifiers": [{"type": "doi", "value": doi}] if doi else [],
+                "venue": venue,
+                "id": f"https://openalex.org/{wid}",
+            })
+
+    return enriched
+
 
 def fetch_openalex_work(work_id: str) -> dict | None:
     """
@@ -139,7 +222,6 @@ def merge_metadata(grobid, crossref, openalex):
     # -------------------------
     # References
     # -------------------------
-
     # References: GROBID > OpenAlex > Crossref
     refs = (
         grobid.get("references")
@@ -150,7 +232,7 @@ def merge_metadata(grobid, crossref, openalex):
 
     # If references are OpenAlex IDs, enrich them
     if refs and isinstance(refs[0], str) and refs[0].startswith("https://openalex.org/"):
-        refs = enrich_openalex_references(refs)
+        refs = enrich_openalex_references_batched(refs)
 
     merged["references"] = refs
 
