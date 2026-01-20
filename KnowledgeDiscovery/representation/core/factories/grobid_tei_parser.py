@@ -79,6 +79,30 @@ def parse_tei_authors(root):
 
     return authors
 
+NS = {"tei": "http://www.tei-c.org/ns/1.0"}
+
+def extract_abstract(root):
+    # 1. Standard <abstract> element
+    abstract_el = root.find(".//tei:abstract", namespaces=NS)
+    if abstract_el is not None:
+        # join all paragraphs inside the abstract
+        paras = abstract_el.findall(".//tei:p", namespaces=NS)
+        if paras:
+            return " ".join("".join(p.itertext()).strip() for p in paras)
+        return "".join(abstract_el.itertext()).strip()
+
+    # 2. <head>Abstract</head> fallback
+    for div in root.findall(".//tei:div", namespaces=NS):
+        head = div.find("tei:head", namespaces=NS)
+        if head is not None and head.text and head.text.strip().lower() == "abstract":
+            paras = div.findall(".//tei:p", namespaces=NS)
+            if paras:
+                return " ".join("".join(p.itertext()).strip() for p in paras)
+
+    return None
+
+
+
 
 def parse_tei(tei_xml: str) -> Dict:
     """
@@ -108,8 +132,7 @@ def parse_tei(tei_xml: str) -> Dict:
     # -------------------------
     # Abstract
     # -------------------------
-    abstract_el = root.find(".//abstract")
-    abstract = "".join(abstract_el.itertext()).strip() if abstract_el is not None else None
+    abstract = extract_abstract(root)
 
     # -------------------------
     # Venue + publication date
