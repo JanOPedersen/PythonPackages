@@ -1,104 +1,157 @@
-def merge_metadata_old(grobid: dict, crossref: dict | None, openalex: dict | None) -> dict:
+import requests
+
+def fetch_openalex_work(work_id: str) -> dict | None:
     """
-    Priority:
-    1. Crossref (publisher-verified)
-    2. GROBID (PDF-derived)
-    3. OpenAlex (enrichment)
+    Fetch metadata for a single OpenAlex work ID.
+    Returns a dict with title, authors, year, doi, venue, etc.
     """
+    # Normalize ID
+    if work_id.startswith("https://openalex.org/"):
+        work_id = work_id.replace("https://openalex.org/", "")
 
-    merged = {}
+    url = f"https://api.openalex.org/works/{work_id}"
 
-    # Title
-    merged["title"] = crossref.get("title") if crossref else grobid.get("title")
+    try:
+        r = requests.get(url, timeout=10)
+        r.raise_for_status()
+        data = r.json()
+    except Exception:
+        return None
 
-    # Authors
-    merged["authors"] = crossref.get("authors") if crossref else grobid.get("authors")
+    # Extract authors
+    authors = []
+    for a in data.get("authorships", []):
+        name = a.get("author", {}).get("display_name")
+        if name:
+            authors.append({"name": name})
 
-    # Abstract
-    # Abstract priority:
-    # 1. GROBID (best quality)
-    # 2. OpenAlex (fallback)
-    # 3. Crossref (rarely present)
-    merged["abstract"] = (
-        grobid.get("abstract")
-        or (openalex.get("abstract") if openalex else None)
-        or (crossref.get("abstract") if crossref else None)
-    )
+    # Extract venue
+    venue = None
+    if "host_venue" in data and data["host_venue"].get("display_name"):
+        venue = data["host_venue"]["display_name"]
 
+    # Extract year
+    year = data.get("publication_year")
 
-    # Venue
-    merged["venue"] = crossref.get("venue") if crossref else grobid.get("venue")
+    # Extract DOI
+    doi = None
+    if data.get("doi"):
+        doi = data["doi"].replace("https://doi.org/", "")
 
-    # Year
-    merged["year"] = crossref.get("year") if crossref else grobid.get("year")
+    return {
+        "title": data.get("title"),
+        "authors": authors,
+        "year": year,
+        "doi": doi,
+        "venue": venue,
+        "id": f"https://openalex.org/{work_id}",
+    }
 
-    # References (GROBID gives structured refs, OpenAlex gives IDs)
-    merged["references"] = grobid.get("references", [])
+def enrich_openalex_references(ref_ids: list[str]) -> list[dict]:
+    """
+    Given a list of OpenAlex reference IDs, fetch metadata for each
+    and return a list of structured reference dicts.
+    """
+    enriched = []
 
-    # Enrichment
-    if openalex:
-        merged["concepts"] = openalex.get("concepts")
-        merged["citations"] = openalex.get("citations")
-        merged["related_works"] = openalex.get("related_works")
+    for rid in ref_ids:
+        meta = fetch_openalex_work(rid)
+        if not meta:
+            # fallback: store ID only
+            enriched.append({"id": rid})
+            continue
 
-    return merged
+        enriched.append({
+            "title": meta.get("title"),
+            "authors": meta.get("authors"),
+            "year": meta.get("year"),
+            "identifiers": [{"type": "doi", "value": meta["doi"]}] if meta.get("doi") else [],
+            "venue": meta.get("venue"),
+            "id": meta.get("id"),
+        })
 
+    return enriched
 
 def merge_metadata(grobid, crossref, openalex):
+    """
+    Merge metadata from GROBID, Crossref, and OpenAlex.
+    Priority:
+        1. GROBID (header > fulltext)
+        2. Crossref
+        3. OpenAlex
+    """
+
     merged = {}
 
+    # -------------------------
     # Title
+    # -------------------------
     merged["title"] = (
         grobid.get("title")
-        or crossref.get("title") if crossref else None
-        or openalex.get("title") if openalex else None
+        or (crossref.get("title") if crossref else None)
+        or (openalex.get("title") if openalex else None)
     )
 
-    # Authors: GROBID wins
-    merged["authors"] = (
-        grobid.get("authors")
-        or (crossref.get("authors") if crossref else None)
-        or (openalex.get("authors") if openalex else None)
-        or []
-    )
-
-    # Abstract: GROBID header wins
+    # -------------------------
+    # Abstract
+    # -------------------------
     merged["abstract"] = (
         grobid.get("abstract")
         or (crossref.get("abstract") if crossref else None)
         or (openalex.get("abstract") if openalex else None)
     )
 
+    # -------------------------
+    # Authors
+    # -------------------------
+    grobid_authors = grobid.get("authors") or []
+    crossref_authors = crossref.get("authors") if crossref else None
+    openalex_authors = openalex.get("authors") if openalex else None
+
+    # GROBID authors win if they contain real names
+    if any(a.get("given") or a.get("family") for a in grobid_authors):
+        merged["authors"] = grobid_authors
+    else:
+        merged["authors"] = (
+            crossref_authors
+            or openalex_authors
+            or []
+        )
+
+    # -------------------------
     # Venue
+    # -------------------------
     merged["venue"] = (
         grobid.get("venue")
         or (crossref.get("venue") if crossref else None)
         or (openalex.get("venue") if openalex else None)
     )
 
+    # -------------------------
     # Year
+    # -------------------------
     merged["year"] = (
         grobid.get("year")
         or (crossref.get("year") if crossref else None)
         or (openalex.get("year") if openalex else None)
     )
 
-    # References: OpenAlex > GROBID > Crossref
-    ''' 
-    merged["references"] = (
-        (openalex.get("references") if openalex else None)
-        or grobid.get("references")
+    # -------------------------
+    # References
+    # -------------------------
+
+    # References: GROBID > OpenAlex > Crossref
+    refs = (
+        grobid.get("references")
+        or (openalex.get("references") if openalex else None)
         or (crossref.get("references") if crossref else None)
         or []
     )
-    '''
 
-    merged["references"] = grobid.get("references", [])
+    # If references are OpenAlex IDs, enrich them
+    if refs and isinstance(refs[0], str) and refs[0].startswith("https://openalex.org/"):
+        refs = enrich_openalex_references(refs)
 
-    # Enrichment
-    if openalex:
-        merged["concepts"] = openalex.get("concepts")
-        merged["citations"] = openalex.get("citations")
-        merged["related_works"] = openalex.get("related_works")
+    merged["references"] = refs
 
     return merged
