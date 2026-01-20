@@ -8,15 +8,24 @@ from .factories_crossref import from_doi as crossref_from_doi
 from .factories_openalex import from_doi as openalex_from_doi
 from .merge_metadata import merge_metadata
 from datetime import datetime 
-from ..core_entities import ( Document, Author, Venue, File, Source, IngestionEvent )
+from ..core_entities import ( Document, Author, Person, Venue, File, Source, IngestionEvent )
 
 def from_pdf(pdf_path: str, grobid=None) -> Document:
     grobid = grobid or GrobidClient()
 
     # 1. GROBID
-    tei_xml = grobid.process_fulltext(pdf_path)
-    grobid_meta = parse_tei(tei_xml)
-    root = etree.fromstring(tei_xml.encode("utf-8"))
+    tei_header = grobid.process_header(pdf_path)
+    print(tei_header)
+
+    tei_fulltext = grobid.process_fulltext(pdf_path)
+
+    header_meta = parse_tei(tei_header)
+    fulltext_meta = parse_tei(tei_fulltext)
+
+    # merge: header wins for abstract, title, authors
+    grobid_meta = {**fulltext_meta, **header_meta}
+
+    root = etree.fromstring(tei_header.encode("utf-8"))
 
     # 2. DOI
     doi = extract_doi(pdf_path, tei_root=root)
@@ -34,8 +43,10 @@ def from_pdf(pdf_path: str, grobid=None) -> Document:
     authors = []
     for a in merged.get("authors", []):
         authors.append(
-            Author(
-                name=a.get("name"),
+            Person(
+                given=a.get("given"),
+                family=a.get("family"),
+                orcid=a.get("orcid") if isinstance(a.get("orcid"), str) else None,
                 affiliation=a.get("affiliation") if isinstance(a.get("affiliation"), str) else None
             )
         )
@@ -43,7 +54,11 @@ def from_pdf(pdf_path: str, grobid=None) -> Document:
     # 7. Venue
     venue = None
     if merged.get("venue"):
-        venue = Venue(name=merged["venue"])
+        venue = Venue(
+            name=merged["venue"],
+            type="journal"  # or "conference" if you prefer
+        )
+
 
     # 8. Files
     files = [File(path=pdf_path)]
@@ -51,9 +66,12 @@ def from_pdf(pdf_path: str, grobid=None) -> Document:
     # 9. Ingestion event
     ingestion_events = [
         IngestionEvent(
-            stage="grobid",
-            timestamp=datetime.utcnow(),
-            source=Source(name="grobid")
+            stage="extract",
+            timestamp=datetime.utcnow().isoformat(),
+            source=Source(
+                name="grobid",
+                origin="grobid"   # or "pipeline", or "service", depending on your design
+            )
         )
     ]
 

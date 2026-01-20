@@ -15,7 +15,15 @@ def merge_metadata(grobid: dict, crossref: dict | None, openalex: dict | None) -
     merged["authors"] = crossref.get("authors") if crossref else grobid.get("authors")
 
     # Abstract
-    merged["abstract"] = grobid.get("abstract")
+   # Abstract priority:
+    # 1. GROBID (best quality)
+    # 2. OpenAlex (fallback)
+    # 3. Crossref (rarely present)
+    merged["abstract"] = (
+        grobid.get("abstract")
+        or (openalex.get("abstract") if openalex else None)
+        or (crossref.get("abstract") if crossref else None)
+    )
 
     # Venue
     merged["venue"] = crossref.get("venue") if crossref else grobid.get("venue")

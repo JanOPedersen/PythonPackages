@@ -2,6 +2,10 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 from typing import Optional, Literal, List, Dict, Any 
 
+class Author(BaseModel): 
+    name: str 
+    affiliation: Optional[str] = None
+
 # ------------------------------------------------------------
 # Identifier
 # ------------------------------------------------------------
