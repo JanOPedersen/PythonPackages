@@ -1,6 +1,6 @@
 import requests
 
-BASE_URL = "https://api.openalex.org/works"
+OPENALEX_API_BASE_URL = "https://api.openalex.org/works"
 
 def search_openalex_query(
     query: str,
@@ -8,7 +8,7 @@ def search_openalex_query(
     fields: list[str] | None = None,
     expand: list[str] | None = None,
 ):
-    url = BASE_URL
+    url = OPENALEX_API_BASE_URL
     
     params = {
         "search": query,
@@ -29,13 +29,12 @@ def search_openalex_query(
 
 def openalex_search_query(query: str, limit: int = 10):
     results = search_openalex_query(query,
-    fields=["id", "doi", "title", "publication_year", "authorships", "concepts", "cited_by_count","referenced_works","concepts"],
+    fields=["id", "doi", "title", "publication_year", "authorships", "concepts", "cited_by_count","referenced_works"],
     limit=limit)
-
     return results
 
 def openalex_search_doi(doi: str) -> dict | None:
-    url = f"https://api.openalex.org/works/https://doi.org/{doi}"
+    url = f"{OPENALEX_API_BASE_URL}/works/https://doi.org/{doi}"
     resp = requests.get(url, timeout=10)
 
     if resp.status_code != 200:
@@ -51,4 +50,5 @@ def openalex_search_doi(doi: str) -> dict | None:
         "title": data.get("title"),
         "publication_year": data.get("publication_year"),
         "authorships": data.get("authorships", []),
+        "doi": data.get("doi"),
     }
