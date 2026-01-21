@@ -1,6 +1,7 @@
 import requests
 import os
-from .utils import extract_doi, make_internal_doi
+from .utils import extract_doi, make_pdf_hash_doi, make_internal_doi
+from PaperSearch.src.PaperSearch.utils.grobid_tei_parser import parse_tei
 
 GROBID_BASE_URL = "http://localhost:8070"
 base_url = GROBID_BASE_URL.rstrip("/")
@@ -48,6 +49,14 @@ def grobid_search_pdf(pdf_path: str) -> str:
     """
     doi = extract_doi(pdf_path)
     if doi is None:
-        doi = make_internal_doi("Unknown Title", ["Unknown Author"], "0000")
+        meta_data = parse_tei(process_fulltext(pdf_path))
+        if meta_data["title"] and meta_data["authors"] and meta_data["year"]:
+            doi = make_internal_doi(
+                meta_data["title"],
+                [a["name"] for a in meta_data["authors"]],
+                str(meta_data["year"])
+            )
+        else:
+            doi = make_pdf_hash_doi(pdf_path)
 
     return {"doi": doi, "header": process_header(pdf_path), "fulltext": process_fulltext(pdf_path)}

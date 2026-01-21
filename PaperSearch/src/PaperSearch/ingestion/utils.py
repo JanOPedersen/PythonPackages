@@ -1,5 +1,6 @@
 import re
 import hashlib
+import uuid
 from PaperSearch.src.PaperSearch.utils.doi_extractor import extract_doi_from_pdf_text, extract_doi_from_xmp
 from PaperSearch.src.PaperSearch.utils.grobid_tei_parser import extract_doi_from_tei, parse_tei
 
@@ -21,6 +22,20 @@ def canonicalise_doi(raw: str) -> str:
 
     # Normalise case
     return raw.lower()
+
+def make_pdf_hash_doi(pdf_path: str) -> str:
+    """
+    Generate a stable internal DOI based on the SHA-256 hash of the PDF file.
+    Uses the reserved 10.0000 prefix to avoid collisions with real DOIs.
+    """
+    sha256 = hashlib.sha256()
+
+    with open(pdf_path, "rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            sha256.update(chunk)
+
+    digest = sha256.hexdigest()
+    return f"10.0000/pdf-{digest}"
 
 def make_internal_doi(title, authors, year):
     fingerprint = f"{title}|{','.join(authors)}|{year}"
