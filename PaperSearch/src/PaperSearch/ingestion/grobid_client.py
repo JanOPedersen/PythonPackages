@@ -1,5 +1,6 @@
 import requests
 import os
+from .utils import extract_doi, make_internal_doi
 
 GROBID_BASE_URL = "http://localhost:8070"
 base_url = GROBID_BASE_URL.rstrip("/")
@@ -45,4 +46,8 @@ def grobid_search_pdf(pdf_path: str) -> str:
     """
     Sends a PDF to GROBID and returns both header and fulltext TEI XML as strings.
     """
-    return {"header:": process_header(pdf_path), "fulltext": process_fulltext(pdf_path)}
+    doi = extract_doi(pdf_path)
+    if doi is None:
+        doi = make_internal_doi("Unknown Title", ["Unknown Author"], "0000")
+
+    return {"doi": doi, "header": process_header(pdf_path), "fulltext": process_fulltext(pdf_path)}

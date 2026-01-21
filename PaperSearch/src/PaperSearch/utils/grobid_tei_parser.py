@@ -101,9 +101,6 @@ def extract_abstract(root):
 
     return None
 
-
-
-
 def parse_tei(tei_xml: str) -> Dict:
     """
     Extracts structured metadata from GROBID TEI XML.

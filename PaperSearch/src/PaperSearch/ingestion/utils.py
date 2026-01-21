@@ -1,7 +1,7 @@
 import re
 import hashlib
 from PaperSearch.src.PaperSearch.utils.doi_extractor import extract_doi_from_pdf_text, extract_doi_from_xmp
-from PaperSearch.src.PaperSearch.utils.grobid_tei_parser import extract_doi_from_tei
+from PaperSearch.src.PaperSearch.utils.grobid_tei_parser import extract_doi_from_tei, parse_tei
 
 def canonicalise_doi(raw: str) -> str:
     """
