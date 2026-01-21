@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
+from collections import defaultdict
 
 # --- your imports ---
 from PaperSearch.src.PaperSearch.ingestion.grobid_client import grobid_search_pdf
@@ -8,8 +10,9 @@ from PaperSearch.src.PaperSearch.ingestion.utils import (
     make_internal_doi,
     make_pdf_hash_doi,
 )
-from PaperSearch.src.PaperSearch.ingestion.crossref_client import crossref_search_doi
-from PaperSearch.src.PaperSearch.ingestion.openalex_client import openalex_search_doi
+from PaperSearch.src.PaperSearch.ingestion.crossref_client import crossref_search_doi, crossref_search_query
+from PaperSearch.src.PaperSearch.ingestion.openalex_client import openalex_search_doi, openalex_search_query
+
 
 @dataclass
 class OpenAlexIngestionBundle:
@@ -150,6 +153,8 @@ def build_bundle_from_doi(doi: str, pdf_roots: list[str]) -> OpenAlexIngestionBu
         "pdf": {},
         "crossref": {},
         "openalex": {},
+        "search_hits_crossref": [],
+        "search_hits_openalex": [],
     }
 
     # ------------------------------------------------------------
@@ -230,3 +235,120 @@ def build_bundle_from_doi(doi: str, pdf_roots: list[str]) -> OpenAlexIngestionBu
     )
 
     return bundle
+
+# ------------------------------------------------------------
+# Helper: build a bundle for a single DOI
+# ------------------------------------------------------------
+def build_single_doi_bundle(doi: str, pdf_roots: list[str]) -> OpenAlexIngestionBundle:
+    errors = []
+    doi = canonicalise_doi(doi)
+
+    query_metadata = {
+        "pdf": {},
+        "crossref": {},
+        "openalex": {},
+        "search_hits_crossref": [],
+        "search_hits_openalex": [],
+    }
+
+    # 1. PDF lookup
+    '''
+    pdf_path = find_pdf_for_doi(doi, pdf_roots)
+    if pdf_path:
+        try:
+            tei = grobid_search_pdf(pdf_path)
+            query_metadata["pdf"] = {
+                "path": pdf_path,
+                "title": tei.get("title"),
+                "authors": tei.get("authors", []),
+                "year": tei.get("year"),
+                "doi": canonicalise_doi(tei.get("doi")),
+                "arxiv": tei.get("arxiv_id"),
+            }
+        except Exception as e:
+            errors.append(f"GROBID extraction failed: {e}")
+            query_metadata["pdf"] = {"path": pdf_path, "error": str(e)}
+    else:
+        query_metadata["pdf"] = {"path": None}
+    '''
+
+    # 2. CrossRef DOI lookup
+    try:
+        cr = crossref_search_doi(doi)
+        if cr:
+            if "DOI" in cr:
+                query_metadata["crossref"]["doi"] = cr["DOI"]
+            if "author" in cr:
+                query_metadata["crossref"]["authors"] = cr["author"]
+            if "year" in cr:
+                query_metadata["crossref"]["year"] = cr["year"]
+            if "title" in cr:
+                query_metadata["crossref"]["title"] = cr["title"]
+    except Exception as e:
+        errors.append(f"Crossref lookup failed: {e}")
+        query_metadata["crossref"]["error"] = str(e)
+
+    # 3. OpenAlex DOI lookup
+    try:
+        oa = openalex_search_doi(doi)
+        if oa:
+            if "doi" in oa:
+                query_metadata["openalex"]["doi"] = oa["doi"]
+            if "authorships" in oa:
+                query_metadata["openalex"]["authors"] = oa["authorships"]
+            if "publication_year" in oa:
+                query_metadata["openalex"]["year"] = oa["publication_year"]
+            if "title" in oa:
+                query_metadata["openalex"]["title"] = oa["title"]
+    except Exception as e:
+        errors.append(f"OpenAlex lookup failed: {e}")
+        query_metadata["openalex"]["error"] = str(e)
+
+    return OpenAlexIngestionBundle(
+        work_id=f"doi:{doi}",
+        query_metadata=query_metadata,
+        retrieval_timestamp=datetime.now(timezone.utc),
+        errors=errors,
+    )
+
+
+# ------------------------------------------------------------
+# Main function: run two searches → union DOIs → build bundles
+# ------------------------------------------------------------
+def build_bundles_from_query(query: str, pdf_roots: list[str]) -> list[OpenAlexIngestionBundle]:
+
+    # 1. Run both searches
+    crossref_hits = crossref_search_query(query)
+    openalex_hits = openalex_search_query(query)
+
+    # 2. Extract DOIs
+    dois = set()
+
+    for item in crossref_hits:
+        doi = canonicalise_doi(item.get("doi"))
+        if doi:
+            dois.add(doi)
+
+    for item in openalex_hits:
+        doi = canonicalise_doi(item.get("doi"))
+        if doi:
+            dois.add(doi)
+
+    # 3. Build bundles for each DOI
+    bundles = {}
+    for doi in dois:
+        #bundles[doi] = build_single_doi_bundle(doi, pdf_roots)
+        bundles[doi] = build_bundle_from_doi(doi, pdf_roots)
+
+    # 4. Attach search hits to bundles
+    for item in crossref_hits:
+        doi = canonicalise_doi(item.get("doi"))
+        if doi in bundles:
+            bundles[doi].query_metadata["search_hits_crossref"].append(item)
+
+    for item in openalex_hits:
+        doi = canonicalise_doi(item.get("doi"))
+        if doi in bundles:
+            bundles[doi].query_metadata["search_hits_openalex"].append(item)
+
+    return list(bundles.values())
