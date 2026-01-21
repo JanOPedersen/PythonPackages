@@ -29,8 +29,19 @@ def search_openalex_query(
 
 def openalex_search_query(query: str, limit: int = 10):
     results = search_openalex_query(query,
-    fields=["id", "doi", "title", "publication_year", "authorships", "concepts", "cited_by_count","referenced_works"],
+    fields=[
+        "id", 
+        "doi", 
+        "title", 
+        "publication_year", 
+        "authorships", 
+        "concepts", 
+        "cited_by_count",
+        "referenced_works",
+        "abstract_inverted_index",
+        ],
     limit=limit)
+
     return results
 
 def openalex_search_doi(doi: str) -> dict | None:
@@ -51,4 +62,5 @@ def openalex_search_doi(doi: str) -> dict | None:
         "publication_year": data.get("publication_year"),
         "authorships": data.get("authorships", []),
         "doi": data.get("doi"),
+        "abstract_inverted_index": data.get("abstract_inverted_index"),
     }
