@@ -1,4 +1,5 @@
 import requests
+from .utils import canonicalise_doi
 
 OPENALEX_API_BASE_URL = "https://api.openalex.org/works"
 
@@ -43,6 +44,11 @@ def openalex_search_query(query: str, limit: int = 10):
         "best_oa_location",
         ],
     limit=limit)
+   
+    for work in results:
+            doi = work.get("doi")
+            if doi:
+                work["doi"] = canonicalise_doi(doi)
 
     return results
 
@@ -63,7 +69,7 @@ def openalex_search_doi(doi: str) -> dict | None:
         "title": data.get("title"),
         "publication_year": data.get("publication_year"),
         "authorships": data.get("authorships", []),
-        "doi": data.get("doi"),
+        "doi": canonicalise_doi(data.get("doi")),
         "abstract_inverted_index": data.get("abstract_inverted_index"),
         "primary_location": data.get("primary_location"),
         "best_oa_location": data.get("best_oa_location"),

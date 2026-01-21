@@ -1,10 +1,5 @@
-from __future__ import annotations
 import requests
 import os
-
-#class GrobidClient:
-#    def __init__(self, base_url: str = "http://localhost:8070"):
-#        self.base_url = base_url.rstrip("/")
 
 GROBID_BASE_URL = "http://localhost:8070"
 base_url = GROBID_BASE_URL.rstrip("/")
