@@ -39,6 +39,7 @@ def openalex_search_query(query: str, limit: int = 10):
         "cited_by_count",
         "referenced_works",
         "abstract_inverted_index",
+        "primary_location",
         ],
     limit=limit)
 
@@ -63,4 +64,5 @@ def openalex_search_doi(doi: str) -> dict | None:
         "authorships": data.get("authorships", []),
         "doi": data.get("doi"),
         "abstract_inverted_index": data.get("abstract_inverted_index"),
+        "primary_location": data.get("primary_location"),
     }
