@@ -114,3 +114,119 @@ def build_bundle_from_pdf(pdf_path: str) -> OpenAlexIngestionBundle:
 
     return bundle
 
+# ------------------------------------------------------------
+# Helper: find a local PDF matching a DOI
+# TODO: customize this, so that it reads from a database or uses a different matching logic
+# ------------------------------------------------------------
+def find_pdf_for_doi(doi: str, roots: list[str]) -> str | None:
+    """
+    Search recursively under the given roots for a PDF whose hash-based DOI
+    matches the target DOI. You can replace this with your own matching logic.
+    """
+    for root in roots:
+        root = Path(root)
+        if not root.exists():
+            continue
+
+        for pdf in root.rglob("*.pdf"):
+            try:
+                pdf_hash_doi = make_pdf_hash_doi(str(pdf))
+                if pdf_hash_doi == doi:
+                    return str(pdf)
+            except Exception:
+                pass
+
+    return None
+
+
+# ------------------------------------------------------------
+# Main function: build bundle from DOI
+# ------------------------------------------------------------
+def build_bundle_from_doi(doi: str, pdf_roots: list[str]) -> OpenAlexIngestionBundle:
+    errors = []
+    doi = canonicalise_doi(doi)
+
+    query_metadata = {
+        "pdf": {},
+        "crossref": {},
+        "openalex": {},
+    }
+
+    # ------------------------------------------------------------
+    # 1. Try to locate a matching PDF
+    # ------------------------------------------------------------
+    '''
+    pdf_path = find_pdf_for_doi(doi, pdf_roots)
+    pdf_metadata = {}
+
+    if pdf_path:
+        try:
+            tei = grobid_search_pdf(pdf_path)
+            pdf_metadata = {
+                "path": pdf_path,
+                "title": tei.get("title"),
+                "authors": tei.get("authors", []),
+                "year": tei.get("year"),
+                "doi": canonicalise_doi(tei.get("doi")),
+                "arxiv": tei.get("arxiv_id"),
+            }
+        except Exception as e:
+            errors.append(f"GROBID extraction failed: {e}")
+            pdf_metadata = {"path": pdf_path, "error": str(e)}
+    else:
+        pdf_metadata = {"path": None}
+
+    query_metadata["pdf"] = pdf_metadata
+    '''
+    # ------------------------------------------------------------
+    # 2. Work ID is simply the DOI
+    # ------------------------------------------------------------
+    work_id = f"doi:{doi}"
+
+    # ------------------------------------------------------------
+    # 3. CrossRef lookup
+    # ------------------------------------------------------------
+    try:
+        crossref_data = crossref_search_doi(doi)
+        if crossref_data:
+            if "DOI" in crossref_data:
+                query_metadata["crossref"]["doi"] = crossref_data["DOI"]
+            if "author" in crossref_data:
+                query_metadata["crossref"]["authors"] = crossref_data["author"]
+            if "year" in crossref_data:
+                query_metadata["crossref"]["year"] = crossref_data["year"]
+            if "title" in crossref_data:
+                query_metadata["crossref"]["title"] = crossref_data["title"]
+    except Exception as e:
+        errors.append(f"Crossref lookup failed: {e}")
+        query_metadata["crossref"]["error"] = str(e)
+
+    # ------------------------------------------------------------
+    # 4. OpenAlex lookup
+    # ------------------------------------------------------------
+    try:
+        openalex_data = openalex_search_doi(doi)
+        if openalex_data:
+            if "doi" in openalex_data:
+                query_metadata["openalex"]["doi"] = openalex_data["doi"]
+            if "authorships" in openalex_data:
+                query_metadata["openalex"]["authors"] = openalex_data["authorships"]
+            if "publication_year" in openalex_data:
+                query_metadata["openalex"]["year"] = openalex_data["publication_year"]
+            if "title" in openalex_data:
+                query_metadata["openalex"]["title"] = openalex_data["title"]
+    except Exception as e:
+        errors.append(f"OpenAlex lookup failed: {e}")
+        query_metadata["openalex"]["error"] = str(e)
+
+    # ------------------------------------------------------------
+    # 5. Assemble bundle
+    # ------------------------------------------------------------
+    bundle = OpenAlexIngestionBundle(
+        work_id=work_id,
+        query_metadata=query_metadata,
+        retrieval_timestamp=datetime.now(timezone.utc),
+        errors=errors,
+    )
+
+    return bundle
