@@ -21,6 +21,47 @@ class OpenAlexIngestionBundle:
     retrieval_timestamp: datetime
     errors: list[str]
 
+def lookup_crossref_metadata(doi: str) -> tuple[dict, list[str]]:
+    metadata = {}
+    errors = []
+    try:
+        cr = crossref_search_doi(doi)
+        if cr:
+            if "DOI" in cr:
+                metadata["doi"] = cr["DOI"]
+            if "author" in cr:
+                metadata["authors"] = cr["author"]
+            if "year" in cr:
+                metadata["year"] = cr["year"]
+            if "title" in cr:
+                metadata["title"] = cr["title"]
+    except Exception as e:
+        errors.append(f"Crossref lookup failed: {e}")
+        metadata["error"] = str(e)
+
+    return metadata, errors
+
+
+def lookup_openalex_metadata(doi: str) -> tuple[dict, list[str]]:
+    metadata = {}
+    errors = []
+    try:
+        oa = openalex_search_doi(doi)
+        if oa:
+            if "doi" in oa:
+                metadata["doi"] = oa["doi"]
+            if "authorships" in oa:
+                metadata["authors"] = oa["authorships"]
+            if "publication_year" in oa:
+                metadata["year"] = oa["publication_year"]
+            if "title" in oa:
+                metadata["title"] = oa["title"]
+    except Exception as e:
+        errors.append(f"OpenAlex lookup failed: {e}")
+        metadata["error"] = str(e)
+
+    return metadata, errors
+
 
 def build_bundle_from_pdf(pdf_path: str) -> OpenAlexIngestionBundle:
     errors = []
@@ -66,56 +107,31 @@ def build_bundle_from_pdf(pdf_path: str) -> OpenAlexIngestionBundle:
     else:
         work_id = make_pdf_hash_doi(pdf_path)
 
-    crossref_data = None
-    openalex_data = None
+    # ------------------------------------------------------------
+    # 3. CrossRef + OpenAlex lookups (refactored)
+    # ------------------------------------------------------------
     if pdf_doi:
-    # ------------------------------------------------------------
-    # 3. Crossref lookup (using crossref_search_query)
-    # ------------------------------------------------------------
-        try:
-            crossref_data = crossref_search_doi(pdf_doi)
-            if crossref_data:
-                if "DOI" in crossref_data:
-                    query_metadata["crossref"]["doi"] = crossref_data["DOI"]
-                if "author" in crossref_data:
-                    query_metadata["crossref"]["authors"] = crossref_data["author"]
-                if "year" in crossref_data:
-                    query_metadata["crossref"]["year"] = crossref_data["year"]
-                if "title" in crossref_data:
-                    query_metadata["crossref"]["title"] = crossref_data["title"]
-        except Exception as e:
-            errors.append(f"Crossref lookup failed: {e}")
-            query_metadata["crossref"]["error"] = str(e)
+        cr_meta, cr_err = lookup_crossref_metadata(pdf_doi)
+        oa_meta, oa_err = lookup_openalex_metadata(pdf_doi)
+
+        query_metadata["crossref"] = cr_meta
+        query_metadata["openalex"] = oa_meta
+
+        errors.extend(cr_err)
+        errors.extend(oa_err)
 
     # ------------------------------------------------------------
-    # 4. OpenAlex lookup (using openalex_search_query)
-    # ------------------------------------------------------------
-        try:
-            openalex_data = openalex_search_doi(pdf_doi)
-            if openalex_data:
-                if "doi" in openalex_data:
-                    query_metadata["openalex"]["doi"] = openalex_data["doi"]
-                if "authorships" in openalex_data:
-                    query_metadata["openalex"]["authors"] = openalex_data["authorships"]
-                if "publication_year" in openalex_data:
-                    query_metadata["openalex"]["year"] = openalex_data["publication_year"]
-                if "title" in openalex_data:
-                    query_metadata["openalex"]["title"] = openalex_data["title"]
-        except Exception as e:
-            errors.append(f"OpenAlex DOI lookup failed: {e}")
-            query_metadata["openalex"]["error"] = str(e)
-
-    # ------------------------------------------------------------
-    # 5. Assemble bundle
+    # 4. Assemble bundle
     # ------------------------------------------------------------
     bundle = OpenAlexIngestionBundle(
         work_id=work_id,
         query_metadata=query_metadata,
-        retrieval_timestamp = datetime.now(timezone.utc),
-        errors=None,
+        retrieval_timestamp=datetime.now(timezone.utc),
+        errors=errors,
     )
 
     return bundle
+
 
 # ------------------------------------------------------------
 # Helper: find a local PDF matching a DOI
@@ -157,160 +173,24 @@ def build_bundle_from_doi(doi: str, pdf_roots: list[str]) -> OpenAlexIngestionBu
         "search_hits_openalex": [],
     }
 
-    # ------------------------------------------------------------
-    # 1. Try to locate a matching PDF
-    # ------------------------------------------------------------
-    '''
-    pdf_path = find_pdf_for_doi(doi, pdf_roots)
-    pdf_metadata = {}
-
-    if pdf_path:
-        try:
-            tei = grobid_search_pdf(pdf_path)
-            pdf_metadata = {
-                "path": pdf_path,
-                "title": tei.get("title"),
-                "authors": tei.get("authors", []),
-                "year": tei.get("year"),
-                "doi": canonicalise_doi(tei.get("doi")),
-                "arxiv": tei.get("arxiv_id"),
-            }
-        except Exception as e:
-            errors.append(f"GROBID extraction failed: {e}")
-            pdf_metadata = {"path": pdf_path, "error": str(e)}
-    else:
-        pdf_metadata = {"path": None}
-
-    query_metadata["pdf"] = pdf_metadata
-    '''
-    # ------------------------------------------------------------
-    # 2. Work ID is simply the DOI
-    # ------------------------------------------------------------
     work_id = f"doi:{doi}"
 
-    # ------------------------------------------------------------
-    # 3. CrossRef lookup
-    # ------------------------------------------------------------
-    try:
-        crossref_data = crossref_search_doi(doi)
-        if crossref_data:
-            if "DOI" in crossref_data:
-                query_metadata["crossref"]["doi"] = crossref_data["DOI"]
-            if "author" in crossref_data:
-                query_metadata["crossref"]["authors"] = crossref_data["author"]
-            if "year" in crossref_data:
-                query_metadata["crossref"]["year"] = crossref_data["year"]
-            if "title" in crossref_data:
-                query_metadata["crossref"]["title"] = crossref_data["title"]
-    except Exception as e:
-        errors.append(f"Crossref lookup failed: {e}")
-        query_metadata["crossref"]["error"] = str(e)
+    # --- CrossRef ---
+    cr_meta, cr_err = lookup_crossref_metadata(doi)
+    query_metadata["crossref"] = cr_meta
+    errors.extend(cr_err)
 
-    # ------------------------------------------------------------
-    # 4. OpenAlex lookup
-    # ------------------------------------------------------------
-    try:
-        openalex_data = openalex_search_doi(doi)
-        if openalex_data:
-            if "doi" in openalex_data:
-                query_metadata["openalex"]["doi"] = openalex_data["doi"]
-            if "authorships" in openalex_data:
-                query_metadata["openalex"]["authors"] = openalex_data["authorships"]
-            if "publication_year" in openalex_data:
-                query_metadata["openalex"]["year"] = openalex_data["publication_year"]
-            if "title" in openalex_data:
-                query_metadata["openalex"]["title"] = openalex_data["title"]
-    except Exception as e:
-        errors.append(f"OpenAlex lookup failed: {e}")
-        query_metadata["openalex"]["error"] = str(e)
+    # --- OpenAlex ---
+    oa_meta, oa_err = lookup_openalex_metadata(doi)
+    query_metadata["openalex"] = oa_meta
+    errors.extend(oa_err)
 
-    # ------------------------------------------------------------
-    # 5. Assemble bundle
-    # ------------------------------------------------------------
-    bundle = OpenAlexIngestionBundle(
+    return OpenAlexIngestionBundle(
         work_id=work_id,
         query_metadata=query_metadata,
         retrieval_timestamp=datetime.now(timezone.utc),
         errors=errors,
     )
-
-    return bundle
-
-# ------------------------------------------------------------
-# Helper: build a bundle for a single DOI
-# ------------------------------------------------------------
-def build_single_doi_bundle(doi: str, pdf_roots: list[str]) -> OpenAlexIngestionBundle:
-    errors = []
-    doi = canonicalise_doi(doi)
-
-    query_metadata = {
-        "pdf": {},
-        "crossref": {},
-        "openalex": {},
-        "search_hits_crossref": [],
-        "search_hits_openalex": [],
-    }
-
-    # 1. PDF lookup
-    '''
-    pdf_path = find_pdf_for_doi(doi, pdf_roots)
-    if pdf_path:
-        try:
-            tei = grobid_search_pdf(pdf_path)
-            query_metadata["pdf"] = {
-                "path": pdf_path,
-                "title": tei.get("title"),
-                "authors": tei.get("authors", []),
-                "year": tei.get("year"),
-                "doi": canonicalise_doi(tei.get("doi")),
-                "arxiv": tei.get("arxiv_id"),
-            }
-        except Exception as e:
-            errors.append(f"GROBID extraction failed: {e}")
-            query_metadata["pdf"] = {"path": pdf_path, "error": str(e)}
-    else:
-        query_metadata["pdf"] = {"path": None}
-    '''
-
-    # 2. CrossRef DOI lookup
-    try:
-        cr = crossref_search_doi(doi)
-        if cr:
-            if "DOI" in cr:
-                query_metadata["crossref"]["doi"] = cr["DOI"]
-            if "author" in cr:
-                query_metadata["crossref"]["authors"] = cr["author"]
-            if "year" in cr:
-                query_metadata["crossref"]["year"] = cr["year"]
-            if "title" in cr:
-                query_metadata["crossref"]["title"] = cr["title"]
-    except Exception as e:
-        errors.append(f"Crossref lookup failed: {e}")
-        query_metadata["crossref"]["error"] = str(e)
-
-    # 3. OpenAlex DOI lookup
-    try:
-        oa = openalex_search_doi(doi)
-        if oa:
-            if "doi" in oa:
-                query_metadata["openalex"]["doi"] = oa["doi"]
-            if "authorships" in oa:
-                query_metadata["openalex"]["authors"] = oa["authorships"]
-            if "publication_year" in oa:
-                query_metadata["openalex"]["year"] = oa["publication_year"]
-            if "title" in oa:
-                query_metadata["openalex"]["title"] = oa["title"]
-    except Exception as e:
-        errors.append(f"OpenAlex lookup failed: {e}")
-        query_metadata["openalex"]["error"] = str(e)
-
-    return OpenAlexIngestionBundle(
-        work_id=f"doi:{doi}",
-        query_metadata=query_metadata,
-        retrieval_timestamp=datetime.now(timezone.utc),
-        errors=errors,
-    )
-
 
 # ------------------------------------------------------------
 # Main function: run two searches → union DOIs → build bundles
