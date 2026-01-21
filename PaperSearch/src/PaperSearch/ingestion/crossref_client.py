@@ -37,7 +37,6 @@ def crossref_search_query(query: str, limit: int = 10):
     return results
 
 def crossref_search_doi(doi: str) -> dict | None:
-    #url = f"https://api.crossref.org/works/{doi}"
     url = f"{CROSSREF_BASE_URL}/works/{doi}"
     resp = requests.get(url, timeout=10)
 
