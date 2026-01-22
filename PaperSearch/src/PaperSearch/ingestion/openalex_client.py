@@ -6,6 +6,7 @@ from tqdm import tqdm
 
 OPENALEX_API_BASE_URL = "https://api.openalex.org/works"
 
+
 class OpenAlexSearchClient:
     """
     A robust OpenAlex search helper with:
@@ -24,12 +25,6 @@ class OpenAlexSearchClient:
         retry_backoff: float = 1.5,
         timeout: int = 30,
     ):
-        """
-        per_page: OpenAlex maximum is 200, but caller can override.
-        max_retries: retry attempts for transient errors.
-        retry_backoff: exponential backoff multiplier.
-        timeout: HTTP timeout.
-        """
         self.per_page = per_page
         self.max_retries = max_retries
         self.retry_backoff = retry_backoff
@@ -50,11 +45,9 @@ class OpenAlexSearchClient:
                 return resp.json()
 
             except requests.HTTPError as e:
-                # 400 usually means bad params, so don't retry
                 if resp.status_code == 400:
                     raise ValueError(f"Bad request to OpenAlex: {resp.text}") from e
 
-                # 429 or 500/503 → retry
                 if resp.status_code in (429, 500, 502, 503, 504):
                     sleep_time = self.retry_backoff ** attempt
                     time.sleep(sleep_time)
@@ -63,7 +56,6 @@ class OpenAlexSearchClient:
                 raise
 
             except requests.RequestException:
-                # network issues → retry
                 sleep_time = self.retry_backoff ** attempt
                 time.sleep(sleep_time)
                 continue
@@ -71,19 +63,20 @@ class OpenAlexSearchClient:
         raise RuntimeError("OpenAlex request failed after retries")
 
     # ------------------------------------------------------------
-    # Public: search with cursor pagination
+    # Public: search with cursor pagination + topic filters
     # ------------------------------------------------------------
     def search(
         self,
         query: str,
         select_fields: Optional[List[str]] = None,
         target_records: int = 1000,
+        topics: Optional[List[str]] = None,   # NEW
     ) -> List[Dict]:
         """
         Perform a search and return up to target_records results.
         Uses cursor-based pagination.
 
-        target_records: how many results you want (approx).
+        topics: list of concept names or concept IDs.
         """
 
         if select_fields is None:
@@ -108,6 +101,25 @@ class OpenAlexSearchClient:
             "select": ",".join(select_fields),
         }
 
+        # --------------------------------------------------------
+        # Topic filtering
+        # --------------------------------------------------------        
+        if topics:
+            filters = []
+            for t in topics:
+                if t.startswith("https://openalex.org/C"):
+                    # Concept ID
+                    filters.append(f"concepts.id:{t}")
+                else:
+                    raise ValueError(
+                        f"Topic '{t}' must be an OpenAlex concept ID. "
+                        "Filtering by display name is not supported by OpenAlex."
+                    )
+            params["filter"] = ",".join(filters)
+        
+        # --------------------------------------------------------
+        # Pagination loop
+        # --------------------------------------------------------
         results = []
         next_cursor = "*"
 
@@ -122,7 +134,6 @@ class OpenAlexSearchClient:
 
                 next_cursor = data.get("meta", {}).get("next_cursor")
 
-                # Stop early if OpenAlex has no more results
                 if not batch:
                     break
 
@@ -133,6 +144,7 @@ def search_openalex_query(
     limit: int = 10,
     fields: list[str] | None = None,
     expand: list[str] | None = None,
+    topics: list[str] | None = None,  
 ):
     url = OPENALEX_API_BASE_URL
     
@@ -149,37 +161,29 @@ def search_openalex_query(
     if expand:
         params["expand"] = ",".join(expand)
 
+     # Add topic filters 
+    if topics: 
+    # Example: ["Computer Science", "Artificial Intelligence"] 
+        topic_filters = [f"concepts.display_name:{t}" for t in topics] 
+        params["filter"] = ",".join(topic_filters)   
+
     r = requests.get(url, params=params, timeout=10)
     r.raise_for_status()
     return r.json().get("results", [])
 
-def openalex_search_query(query: str, limit: int = 10):
-    results = search_openalex_query(query,
-    fields=[
-        "id", 
-        "doi", 
-        "title", 
-        "publication_year", 
-        "authorships", 
-        "concepts", 
-        "cited_by_count",
-        "referenced_works",
-        "abstract_inverted_index",
-        "primary_location",
-        "best_oa_location",
-        ],
-    limit=limit)
-   
-    for work in results:
-            doi = work.get("doi")
-            if doi:
-                work["doi"] = canonicalise_doi(doi)
-
-    return results
-
-def openalex_search_query_paginated(query: str, limit: int = 10, per_page: int = 200) -> List[Dict]:
+#Computer Science → https://openalex.org/C41008148
+#Artificial Intelligence → https://openalex.org/C154945302
+#Machine Learning → https://openalex.org/C119857082
+def openalex_search_query(
+        query: str, 
+        limit: int = 10, 
+        per_page: int = 200,
+        topics: list[str] | None = [
+            "https://openalex.org/C119857082",
+            "https://openalex.org/C154945302",]
+        ) -> List[Dict]:
     client = OpenAlexSearchClient(per_page=per_page)
-    results = client.search(query, target_records=limit)
+    results = client.search(query, target_records=limit, topics=topics)
 
     for w in results:
         if w.get("doi"):

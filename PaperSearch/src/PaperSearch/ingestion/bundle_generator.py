@@ -196,12 +196,16 @@ def build_bundle_from_doi(doi: str, pdf_roots: list[str]) -> OpenAlexIngestionBu
 # ------------------------------------------------------------
 # Main function: run two searches → union DOIs → build bundles
 # ------------------------------------------------------------
-def build_bundles_from_query(query: str, pdf_roots: list[str], limit: int = 10) -> list[OpenAlexIngestionBundle]:
+def build_bundles_from_query(
+        query: str, 
+        pdf_roots: 
+        list[str], 
+        limit: int = 10, 
+        topics: list[str] | None = None) -> list[OpenAlexIngestionBundle]:
 
     # 1. Run both searches
     crossref_hits = crossref_search_query(query, limit=limit)
-    openalex_hits = openalex_search_query(query, limit=limit)
-
+    openalex_hits = openalex_search_query(query, limit=limit, topics=topics)
     # 2. Extract DOIs
     dois = set()
 
