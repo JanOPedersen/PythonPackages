@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from collections import defaultdict
+from tqdm import tqdm
 
 # --- your imports ---
 from PaperSearch.src.PaperSearch.ingestion.grobid_client import grobid_search_pdf
@@ -216,7 +217,7 @@ def build_bundles_from_query(query: str, pdf_roots: list[str], limit: int = 10) 
 
     # 3. Build bundles for each DOI
     bundles = {}
-    for doi in dois:
+    for doi in tqdm(dois, desc=f"Building bundles for query: {query}", unit="bundle"):
         bundles[doi] = build_bundle_from_doi(doi, pdf_roots)
         bundles[doi].query_metadata["source_query"] = query
 
