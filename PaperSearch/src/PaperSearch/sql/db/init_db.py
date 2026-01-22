@@ -38,25 +38,25 @@ CREATE INDEX IF NOT EXISTS idx_raw_bundles_work_id
 -- ============================================================
 -- NORMALIZED WORKS
 -- ============================================================
-CREATE TABLE IF NOT EXISTS normalized_works (
+CREATE TABLE normalized_works (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-    work_id TEXT NOT NULL UNIQUE,
-    doi TEXT,
-    arxiv_id TEXT,
-
+    work_id TEXT,            -- canonical OpenAlex ID (nullable)
+    doi TEXT,                -- canonical DOI (nullable)
     title TEXT,
-    authors TEXT,
+    authors TEXT,            -- JSON list
     year INTEGER,
 
-    source_pdf BOOLEAN,
-    source_crossref BOOLEAN,
-    source_openalex BOOLEAN,
+    alternate_dois TEXT,     -- JSON list of all DOIs seen
+    source_bundle_ids TEXT,  -- JSON list of raw bundle IDs merged into this record
 
-    merged_metadata TEXT,
+    provenance TEXT,         -- JSON dict: { "doi": "crossref", "title": "openalex", ... }
+    confidence REAL,         -- 0.0–1.0 score
 
-    normalized_timestamp TEXT NOT NULL
+    created_at TEXT,
+    updated_at TEXT
 );
+
 
 CREATE INDEX IF NOT EXISTS idx_normalized_doi
     ON normalized_works(doi);
