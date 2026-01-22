@@ -217,8 +217,8 @@ def build_bundles_from_query(query: str, pdf_roots: list[str], limit: int = 10) 
     # 3. Build bundles for each DOI
     bundles = {}
     for doi in dois:
-        #bundles[doi] = build_single_doi_bundle(doi, pdf_roots)
         bundles[doi] = build_bundle_from_doi(doi, pdf_roots)
+        bundles[doi].query_metadata["source_query"] = query
 
     # 4. Attach search hits to bundles
     for item in crossref_hits:
