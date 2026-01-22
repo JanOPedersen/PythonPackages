@@ -256,49 +256,21 @@ class Normalizer:
     # Full streaming normalization
     # -----------------------------
     def normalize_database(self):
-        # Count groups for progress bar
-        count_work_id = self.conn.execute(
-            "SELECT COUNT(DISTINCT work_id) FROM raw_bundles WHERE work_id IS NOT NULL"
-        ).fetchone()[0]
+        # Load all bundles and group by identity_key()
+        groups = {}
+        for row in self.conn.execute("SELECT * FROM raw_bundles"):
+            bundle = RawBundle(row)
+            key_type, key_value = self.identity_key(bundle)
+            groups.setdefault((key_type, key_value), []).append(bundle)
 
-        count_doi = self.conn.execute(
-            "SELECT COUNT(DISTINCT doi) FROM raw_bundles WHERE work_id IS NULL AND doi IS NOT NULL"
-        ).fetchone()[0]
-
-        count_unresolved = self.conn.execute(
-            "SELECT COUNT(*) FROM raw_bundles WHERE work_id IS NULL AND doi IS NULL"
-        ).fetchone()[0]
-
-        total_groups = count_work_id + count_doi + count_unresolved
+        total_groups = len(groups)
 
         with tqdm(total=total_groups, desc="Normalizing") as pbar:
-
-            # 1. Groups with work_id
-            for (work_id,) in self.conn.execute(
-                "SELECT DISTINCT work_id FROM raw_bundles WHERE work_id IS NOT NULL"
-            ):
-                bundles = list(self.load_group_by_work_id(work_id))
+            for (_, _), bundles in groups.items():
                 merged = self.merge_bundles(bundles)
                 self.store_normalized(merged)
                 pbar.update(1)
 
-            # 2. Groups with DOI but no work_id
-            for (doi,) in self.conn.execute(
-                "SELECT DISTINCT doi FROM raw_bundles WHERE work_id IS NULL AND doi IS NOT NULL"
-            ):
-                bundles = list(self.load_group_by_doi(doi))
-                merged = self.merge_bundles(bundles)
-                self.store_normalized(merged)
-                pbar.update(1)
-
-            # 3. Unresolved bundles
-            for (bundle_id,) in self.conn.execute(
-                "SELECT id FROM raw_bundles WHERE work_id IS NULL AND doi IS NULL"
-            ):
-                bundles = list(self.load_unresolved(bundle_id))
-                merged = self.merge_bundles(bundles)
-                self.store_normalized(merged)
-                pbar.update(1)
 
 
 # ------------------------------------------------------------
