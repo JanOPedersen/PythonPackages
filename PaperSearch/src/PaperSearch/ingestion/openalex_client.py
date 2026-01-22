@@ -163,7 +163,6 @@ def search_openalex_query(
 
      # Add topic filters 
     if topics: 
-    # Example: ["Computer Science", "Artificial Intelligence"] 
         topic_filters = [f"concepts.display_name:{t}" for t in topics] 
         params["filter"] = ",".join(topic_filters)   
 
@@ -171,16 +170,14 @@ def search_openalex_query(
     r.raise_for_status()
     return r.json().get("results", [])
 
-#Computer Science → https://openalex.org/C41008148
-#Artificial Intelligence → https://openalex.org/C154945302
-#Machine Learning → https://openalex.org/C119857082
 def openalex_search_query(
         query: str, 
         limit: int = 10, 
         per_page: int = 200,
         topics: list[str] | None = [
-            "https://openalex.org/C119857082",
-            "https://openalex.org/C154945302",]
+            "https://openalex.org/C119857082", #Machine Learning
+            #"https://openalex.org/C41008148",  #Computer Science
+            "https://openalex.org/C154945302",] #Artificial Intelligence
         ) -> List[Dict]:
     client = OpenAlexSearchClient(per_page=per_page)
     results = client.search(query, target_records=limit, topics=topics)
