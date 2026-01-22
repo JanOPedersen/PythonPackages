@@ -135,9 +135,16 @@ class Normalizer:
                     merged["doi"] = doi
                     merged["provenance"]["doi"] = source
 
-            # work_id
+            # work_id: prefer OpenAlex ID, else existing bundle.work_id, else DOI-based synthetic ID
             if merged["work_id"] is None:
-                merged["work_id"] = md["openalex"].get("id")
+                oa_id = md["openalex"].get("id")
+                if oa_id:
+                    merged["work_id"] = oa_id
+                elif b.work_id:
+                    merged["work_id"] = b.work_id
+                elif merged["doi"]:
+                    merged["work_id"] = f"doi:{merged['doi']}"
+
 
             # title
             title = (
@@ -181,7 +188,7 @@ class Normalizer:
                     "pdf"
                 )
 
-                # PDF metadata
+            # PDF metadata
             if merged["pdf_metadata"] is None and b.pdf_metadata:
                 merged["pdf_metadata"] = b.pdf_metadata
 
