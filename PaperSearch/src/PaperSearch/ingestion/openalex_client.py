@@ -198,7 +198,7 @@ def openalex_search_doi(doi: str) -> dict | None:
     data = resp.json()
 
     return {
-        "concepts": [c["display_name"] for c in data.get("concepts", [])],
+        "concepts": data.get("concepts", []),
         "cited_by_count": data.get("cited_by_count"),
         "referenced_works": data.get("referenced_works", []),
         "id": data.get("id"),

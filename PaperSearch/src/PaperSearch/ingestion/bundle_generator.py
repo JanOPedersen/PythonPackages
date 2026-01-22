@@ -57,6 +57,8 @@ def lookup_openalex_metadata(doi: str) -> tuple[dict, list[str]]:
                 metadata["year"] = oa["publication_year"]
             if "title" in oa:
                 metadata["title"] = oa["title"]
+            if "concepts" in oa: 
+                metadata["concepts"] = oa["concepts"]
     except Exception as e:
         errors.append(f"OpenAlex lookup failed: {e}")
         metadata["error"] = str(e)

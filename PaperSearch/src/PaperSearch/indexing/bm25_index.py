@@ -1,25 +1,37 @@
+# src/PaperSearch/indexing/bm25_index.py
+
 import math
 from collections import Counter, defaultdict
+from typing import Dict, List, Tuple
 
 
 class BM25Index:
     """
-    A lightweight BM25 index suitable for canonical search.
+    Lightweight BM25 index with optional concept metadata per document.
     """
 
     def __init__(self, k1: float = 1.5, b: float = 0.75):
         self.k1 = k1
         self.b = b
 
-        self.N = 0  # number of indexed documents
-        self.doc_len = {}  # doc_id -> length
-        self.avg_len = 0.0
+        self.N = 0  # number of documents
+        self.doc_len: Dict[int, int] = {}
+        self.avg_len: float = 0.0
 
-        self.df = Counter()  # term -> document frequency
-        self.inverted = defaultdict(list)  # term -> list[(doc_id, tf)]
-        self.doc_ids = {}  # doc_id -> work_id
+        self.df: Counter = Counter()  # term -> document frequency
+        self.inverted: Dict[str, List[Tuple[int, int]]] = defaultdict(list)
+        self.doc_ids: Dict[int, str] = {}  # doc_id -> work_id
 
-    def add_document(self, doc_id: int, work_id: str, text: str):
+        # concept metadata: doc_id -> list[(concept_id, score)]
+        self.doc_concepts: Dict[int, List[Tuple[str, float]]] = {}
+
+    def add_document(
+        self,
+        doc_id: int,
+        work_id: str,
+        text: str,
+        concepts: List[Tuple[str, float]] | None = None,
+    ) -> None:
         tokens = text.lower().split()
         counts = Counter(tokens)
 
@@ -31,13 +43,18 @@ class BM25Index:
             self.df[term] += 1
             self.inverted[term].append((doc_id, tf))
 
-    def finalize(self):
+        if concepts:
+            self.doc_concepts[doc_id] = concepts
+        else:
+            self.doc_concepts[doc_id] = []
+
+    def finalize(self) -> None:
         if self.N > 0:
             self.avg_len = sum(self.doc_len.values()) / self.N
 
-    def score(self, query: str, top_k: int = 20):
+    def score(self, query: str, top_k: int = 20) -> List[Tuple[str, float]]:
         q_tokens = query.lower().split()
-        scores = Counter()
+        scores: Counter = Counter()
 
         for term in q_tokens:
             if term not in self.inverted:
@@ -53,3 +70,10 @@ class BM25Index:
 
         top = scores.most_common(top_k)
         return [(self.doc_ids[doc_id], score) for doc_id, score in top]
+
+    def get_doc_concepts(self, work_id: str) -> List[Tuple[str, float]]:
+        # reverse lookup: work_id -> doc_id
+        for doc_id, wid in self.doc_ids.items():
+            if wid == work_id:
+                return self.doc_concepts.get(doc_id, [])
+        return []
