@@ -126,9 +126,8 @@ class OpenAlexSearchClient:
             filters.append("has_abstract:true")
 
             params["filter"] = ",".join(filters)
+            params["sort"] = "cited_by_count:desc"
 
-
-        
         # --------------------------------------------------------
         # Pagination loop
         # --------------------------------------------------------
