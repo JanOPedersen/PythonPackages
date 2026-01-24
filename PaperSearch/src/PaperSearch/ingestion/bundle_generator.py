@@ -226,7 +226,7 @@ def build_bundles_from_query(
 
     # 3. Build bundles for each DOI
     bundles = {}
-    for doi in tqdm(dois, desc=f"Building bundles for query: {query}", unit="bundle"):
+    for doi in tqdm(dois, desc=f"Building bundles", unit="bundle"):
         bundles[doi] = build_bundle_from_doi(doi, pdf_roots)
         bundles[doi].query_metadata["source_query"] = query
 
