@@ -203,8 +203,7 @@ def build_bundle_from_doi(doi: str, pdf_roots: list[str]) -> OpenAlexIngestionBu
 # ------------------------------------------------------------
 def build_bundles_from_query(
         query: str, 
-        pdf_roots: 
-        list[str], 
+        pdf_roots: list[str], 
         limit: int = 10, 
         topics: list[str] | None = None,
         year_range: tuple[int, int] | None = None,    

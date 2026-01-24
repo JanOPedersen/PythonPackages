@@ -122,8 +122,8 @@ class OpenAlexSearchClient:
                 filters.append(f"from_publication_date:{year}-01-01")
                 filters.append(f"to_publication_date:{year}-12-31")
 
-            # Add abstract filter (recommended)
             filters.append("has_abstract:true")
+            #filters.append("primary_topic.domain:Computer Science")
 
             params["filter"] = ",".join(filters)
             params["sort"] = "cited_by_count:desc"
