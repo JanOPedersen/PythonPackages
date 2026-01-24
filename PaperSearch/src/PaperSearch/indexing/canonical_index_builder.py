@@ -49,6 +49,7 @@ def iter_canonical_docs(conn: sqlite3.Connection) -> Iterable[Tuple[str, str, li
         raw_md = row["openalex_metadata"] if "openalex_metadata" in row.keys() else None
         md = safe_load_metadata(raw_md)
 
+        # always empty string for some reason
         abstract = inverted_index_to_text(md.get("abstract_inverted_index") or {})
         text = " ".join(filter(None, [row["title"], abstract]))
         concepts = extract_concepts(md)
