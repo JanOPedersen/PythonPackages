@@ -206,11 +206,13 @@ def build_bundles_from_query(
         pdf_roots: 
         list[str], 
         limit: int = 10, 
-        topics: list[str] | None = None) -> list[OpenAlexIngestionBundle]:
+        topics: list[str] | None = None,
+        year_range: tuple[int, int] | None = None,    
+    ) -> list[OpenAlexIngestionBundle]:
 
     # 1. Run both searches
     crossref_hits = crossref_search_query(query, limit=limit)
-    openalex_hits = openalex_search_query(query, limit=limit, topics=topics)
+    openalex_hits = openalex_search_query(query, limit=limit, topics=topics, year_range=year_range)
     # 2. Extract DOIs
     dois = set()
 

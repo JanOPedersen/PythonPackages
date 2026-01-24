@@ -70,7 +70,8 @@ class OpenAlexSearchClient:
         query: str,
         select_fields: Optional[List[str]] = None,
         target_records: int = 1000,
-        topics: Optional[List[str]] = None,   # NEW
+        topics: Optional[List[str]] = None,
+        year: int | None = None, 
     ) -> List[Dict]:
         """
         Perform a search and return up to target_records results.
@@ -115,7 +116,18 @@ class OpenAlexSearchClient:
                         f"Topic '{t}' must be an OpenAlex concept ID. "
                         "Filtering by display name is not supported by OpenAlex."
                     )
+                
+            # Add date filters here
+            if year is not None:
+                filters.append(f"from_publication_date:{year}-01-01")
+                filters.append(f"to_publication_date:{year}-12-31")
+
+            # Add abstract filter (recommended)
+            filters.append("has_abstract:true")
+
             params["filter"] = ",".join(filters)
+
+
         
         # --------------------------------------------------------
         # Pagination loop
@@ -139,37 +151,6 @@ class OpenAlexSearchClient:
 
         return results[:target_records]
 
-def search_openalex_query(
-    query: str,
-    limit: int = 10,
-    fields: list[str] | None = None,
-    expand: list[str] | None = None,
-    topics: list[str] | None = None,  
-):
-    url = OPENALEX_API_BASE_URL
-    
-    params = {
-        "search": query,
-        "per-page": limit,
-    }
-
-    # Add metadata field selection
-    if fields:
-        params["select"] = ",".join(fields)
-
-    # Add expansion of nested metadata
-    if expand:
-        params["expand"] = ",".join(expand)
-
-     # Add topic filters 
-    if topics: 
-        topic_filters = [f"concepts.display_name:{t}" for t in topics] 
-        params["filter"] = ",".join(topic_filters)   
-
-    r = requests.get(url, params=params, timeout=10)
-    r.raise_for_status()
-    return r.json().get("results", [])
-
 def openalex_search_query(
         query: str, 
         limit: int = 10, 
@@ -177,16 +158,23 @@ def openalex_search_query(
         topics: list[str] | None = [
             "https://openalex.org/C119857082", #Machine Learning
             #"https://openalex.org/C41008148",  #Computer Science
-            "https://openalex.org/C154945302",] #Artificial Intelligence
-        ) -> List[Dict]:
+            "https://openalex.org/C154945302",], #Artificial Intelligence
+        year_range: tuple[int, int] | None = None,    
+    ) -> List[Dict]:
     client = OpenAlexSearchClient(per_page=per_page)
-    results = client.search(query, target_records=limit, topics=topics)
+    results = []
+    if year_range is None:
+        results = client.search(query, target_records=limit, topics=topics,year=2026)
+    else:
+        for year in range(year_range[0], year_range[1] + 1):
+            results.extend(client.search(query, target_records=limit, topics=topics, year=year))
 
     for w in results:
         if w.get("doi"):
             w["doi"] = canonicalise_doi(w["doi"])
 
     return results
+
 
 def openalex_search_doi(doi: str) -> dict | None:
     url = f"{OPENALEX_API_BASE_URL}/works/https://doi.org/{doi}"
