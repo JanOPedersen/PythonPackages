@@ -32,13 +32,6 @@ def run_pipeline():
         if i > 5:
             break  # limit to first 5 papers for testing
 
-
-        #pdf_path = resolve_pdf(p) 
-        #if pdf_path: 
-        #    print(f"PDF downloaded: {pdf_path}") 
-        #else: 
-        #    print("No PDF available for this paper.")
-
         title = p.get("title", "")
         abstract = decode_abstract(p.get("abstract_inverted_index"))
         print("Title:", title)
