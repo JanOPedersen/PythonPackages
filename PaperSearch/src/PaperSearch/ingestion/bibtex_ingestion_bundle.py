@@ -70,10 +70,22 @@ def resolve_work_id(title: str, authors: List[str], year: str,
 def build_bundle_from_bib_entry(entry: Dict) -> OpenAlexIngestionBundle:
     errors = []
     query_metadata = {
+        "pdf": {          # required for DB schema
+            "path": None,
+            "title": None,
+            "authors": [],
+            "year": None,
+            "doi": None,
+            "arxiv": None,
+        },
         "bibtex": {},
         "crossref": {},
         "openalex": {},
+        "search_hits_crossref": [],
+        "search_hits_openalex": [],
+        "source_query": None,
     }
+
 
     # Extract fields
     fields = extract_bib_fields(entry)
