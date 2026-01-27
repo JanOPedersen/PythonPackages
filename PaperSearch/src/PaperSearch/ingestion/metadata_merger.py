@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, List
 
 # --- your imports ---
@@ -142,7 +142,7 @@ def build_bundle_from_pdf(pdf_path: str) -> OpenAlexIngestionBundle:
         authorships=openalex_authorships,
         related_works=openalex_related,
         query_metadata=query_metadata,
-        retrieval_timestamp=datetime.utcnow(),
+        retrieval_timestamp = datetime.now(timezone.utc),
         errors=errors,
     )
 
