@@ -167,7 +167,7 @@ def find_pdf_for_doi(doi: str, roots: list[str]) -> str | None:
 # ------------------------------------------------------------
 # Main function: build bundle from DOI
 # ------------------------------------------------------------
-def build_bundle_from_doi(doi: str, pdf_roots: list[str]) -> OpenAlexIngestionBundle:
+def build_bundle_from_doi(doi: str) -> OpenAlexIngestionBundle:
     errors = []
     doi = canonicalise_doi(doi)
 
@@ -228,7 +228,7 @@ def build_bundles_from_query(
     # 3. Build bundles for each DOI
     bundles = {}
     for doi in tqdm(dois, desc=f"Building bundles", unit="bundle"):
-        bundles[doi] = build_bundle_from_doi(doi, pdf_roots)
+        bundles[doi] = build_bundle_from_doi(doi)
         bundles[doi].query_metadata["source_query"] = query
 
     # 4. Attach search hits to bundles
