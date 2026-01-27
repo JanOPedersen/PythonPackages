@@ -95,18 +95,6 @@ def crossref_search_query(query: str, limit: int = 10):
 
     return results
 
-
-
-def crossref_search_query_old(query: str, limit: int = 10):
-    results = search_crossref_query(query,
-    fields=["title", "DOI", "author","published","is-referenced-by-count","reference"],
-    limit=limit)
-    for work in results:
-        doi = work.get("DOI")
-        if doi:
-            work["DOI"] = canonicalise_doi(doi)
-    return results
-
 def crossref_search_doi(doi: str) -> dict | None:
     url = f"{CROSSREF_BASE_URL}/works/{doi}"
     resp = requests.get(url, timeout=10)
