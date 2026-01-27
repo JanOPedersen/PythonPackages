@@ -154,11 +154,16 @@ class Normalizer:
             )
             if merged["title"] is None and title:
                 merged["title"] = title
-                merged["provenance"]["title"] = (
-                    "openalex" if md["openalex"].get("title") else
-                    "crossref" if md["crossref"].get("title") else
-                    "pdf"
-                )
+
+                if md["openalex"].get("title"):
+                    source = "openalex"
+                elif md["crossref"].get("title"):
+                    source = "crossref"
+                else:
+                    source = "pdf"
+
+                merged["provenance"]["title"] = source
+
 
             # authors
             authors = (
