@@ -6,7 +6,6 @@ from tqdm import tqdm
 
 OPENALEX_API_BASE_URL = "https://api.openalex.org/works"
 
-
 class OpenAlexSearchClient:
     """
     A robust OpenAlex search helper with:
