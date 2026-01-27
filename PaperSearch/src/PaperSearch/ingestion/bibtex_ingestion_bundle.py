@@ -1,38 +1,16 @@
-#from __future__ import annotations
-#from pathlib import Path
-#from datetime import datetime, timezone
-#from typing import Dict, List, Optional, Tuple
-
-#import bibtexparser
-
-#from rr_ingestion.doi_normalization import canonicalise_doi
-#from rr_ingestion.identifier_utils import (
-#    make_internal_doi,
-#    make_synthetic_id,
-#)
-#from rr_ingestion.crossref_client import lookup_crossref_metadata
-#from rr_ingestion.openalex_client import lookup_openalex_metadata
-#from rr_ingestion.models import OpenAlexIngestionBundle
-## -----------------------------------
-
-
 from __future__ import annotations
 from pathlib import Path
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
-
 import bibtexparser
-
-from .utils import canonicalise_doi
-
 from .utils import (
     make_internal_doi,
+    canonicalise_doi,
+    make_synthetic_id
 )
-
 from .bundle_generator import lookup_crossref_metadata,lookup_openalex_metadata
 from .bundle_generator import OpenAlexIngestionBundle
 
-from .utils import make_synthetic_id
 
 # ------------------------------------------------------------
 # 1. Load BibTeX
