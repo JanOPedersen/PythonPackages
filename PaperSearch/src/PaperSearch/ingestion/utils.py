@@ -7,7 +7,7 @@ from PaperSearch.src.PaperSearch.utils.doi_extractor import extract_doi_from_pdf
 from PaperSearch.src.PaperSearch.utils.grobid_tei_parser import extract_doi_from_tei, parse_tei
 
 
-def canonicalise_doi(raw: str) -> str:
+def canonicalise_doi(raw: str) -> str | None:
     """
     Convert any DOI-like string into a canonical bare DOI.
     """
