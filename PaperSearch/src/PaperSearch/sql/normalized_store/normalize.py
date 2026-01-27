@@ -1,6 +1,6 @@
 import sqlite3
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Iterable, List
 from tqdm import tqdm
 
@@ -239,7 +239,7 @@ class Normalizer:
     # Store normalized record
     # -----------------------------
     def store_normalized(self, m):
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
 
         self.conn.execute("""
             INSERT INTO normalized_works (
