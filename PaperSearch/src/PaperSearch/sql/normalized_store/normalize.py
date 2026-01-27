@@ -156,13 +156,13 @@ class Normalizer:
                 merged["title"] = title
 
                 if md["openalex"].get("title"):
-                    source = "openalex"
+                    provenance_title = "openalex"
                 elif md["crossref"].get("title"):
-                    source = "crossref"
+                    provenance_title = "crossref"
                 else:
-                    source = "pdf"
+                    provenance_title = "pdf"
 
-                merged["provenance"]["title"] = source
+                merged["provenance"]["title"] = provenance_title
 
 
             # authors
