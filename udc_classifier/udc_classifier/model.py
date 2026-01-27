@@ -13,7 +13,7 @@ class UDCClassifier:
                 min_df=2,
                 ngram_range=(1, 2)
             )),
-            ("clf", LinearSVC())
+            ("clf", LinearSVC(random_state=42))
         ])
 
     def train(self, texts, labels):
