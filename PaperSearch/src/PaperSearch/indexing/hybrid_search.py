@@ -16,7 +16,7 @@ class HybridSearch:
             ).fetchone()
         return row["title"] if row else ""
 
-    def search(self, query, top_k=20, alpha=1.0, required_concepts=None, boosted_concepts=None):
+    def search(self, query, top_k=20, alpha=1.0, boosted_concepts=None):
         bm25_results = self.bm25.score(query, top_k=300)
         q_vec = self.emb.encode(query)
 
