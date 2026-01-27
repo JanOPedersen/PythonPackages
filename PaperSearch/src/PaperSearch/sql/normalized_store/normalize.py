@@ -192,11 +192,16 @@ class Normalizer:
             )
             if merged["year"] is None and year:
                 merged["year"] = year
-                merged["provenance"]["year"] = (
-                    "crossref" if md["crossref"].get("year") else
-                    "openalex" if md["openalex"].get("year") else
-                    "pdf"
-                )
+
+                if md["crossref"].get("year"):
+                    provenance_year = "crossref"
+                elif md["openalex"].get("year"):
+                    provenance_year = "openalex"
+                else:
+                    provenance_year = "pdf"
+
+                merged["provenance"]["year"] = provenance_year
+
 
             # PDF metadata
             if merged["pdf_metadata"] is None and b.pdf_metadata:
