@@ -133,7 +133,7 @@ class OpenAlexSearchClient:
         results = []
         next_cursor = "*"
 
-        with tqdm(desc=f"OpenAlex search", unit="record") as pbar:
+        with tqdm(desc="OpenAlex search", unit="record") as pbar:
             while next_cursor and len(results) < target_records:
                 params["cursor"] = next_cursor
                 data = self._request(params)
