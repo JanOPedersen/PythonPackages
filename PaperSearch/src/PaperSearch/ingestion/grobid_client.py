@@ -43,7 +43,7 @@ def process_fulltext(pdf_path: str) -> str:
     resp.raise_for_status()
     return resp.text
 
-def grobid_search_pdf(pdf_path: str) -> str:
+def grobid_search_pdf(pdf_path: str) -> dict:
     """
     Sends a PDF to GROBID and returns both header and fulltext TEI XML as strings.
     """
