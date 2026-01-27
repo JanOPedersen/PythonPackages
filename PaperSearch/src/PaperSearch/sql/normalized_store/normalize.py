@@ -173,11 +173,16 @@ class Normalizer:
             )
             if merged["authors"] == [] and authors:
                 merged["authors"] = authors
-                merged["provenance"]["authors"] = (
-                    "openalex" if md["openalex"].get("authors") else
-                    "crossref" if md["crossref"].get("authors") else
-                    "pdf"
-                )
+
+                if md["openalex"].get("authors"):
+                    provenance_authors = "openalex"
+                elif md["crossref"].get("authors"):
+                    provenance_authors = "crossref"
+                else:
+                    provenance_authors = "pdf"
+
+                merged["provenance"]["authors"] = provenance_authors
+
 
             # year
             year = (
