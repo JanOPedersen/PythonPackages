@@ -1,4 +1,5 @@
 import requests
+import urllib.parse
 from .utils import canonicalise_doi
 
 CROSSREF_BASE_URL = "https://api.crossref.org/works"
@@ -121,3 +122,69 @@ def crossref_search_doi(doi: str) -> dict | None:
         "URL": data.get("URL"),
         "reference": data.get("reference", []),
     }
+
+import requests
+import urllib.parse
+
+def crossref_lookup(title: str):
+    """
+    Query Crossref using only a paper title.
+    Returns a dictionary with metadata if found, otherwise None.
+    """
+
+    # Encode title for URL
+    query = urllib.parse.quote(title)
+
+    # Crossref API endpoint
+    url = f"https://api.crossref.org/works?query.title={query}&rows=5"
+
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+    except Exception as e:
+        print(f"Request error: {e}")
+        return None
+
+    data = response.json()
+
+    # No results
+    if "message" not in data or "items" not in data["message"]:
+        return None
+
+    items = data["message"]["items"]
+    if not items:
+        return None
+
+    # Pick the best match (first item is usually the highest score)
+    item = items[0]
+
+    # Extract metadata safely
+    metadata = {
+        "title": item.get("title", [""])[0],
+        "DOI": item.get("DOI"),
+        "type": item.get("type"),
+        "publisher": item.get("publisher"),
+        "URL": item.get("URL"),
+        "published_year": (
+            item.get("issued", {})
+                .get("date-parts", [[None]])[0][0]
+        ),
+        "authors": [
+            f"{a.get('given', '')} {a.get('family', '')}".strip()
+            for a in item.get("author", [])
+        ] if "author" in item else [],
+        "container_title": item.get("container-title", [""])[0],
+        "volume": item.get("volume"),
+        "issue": item.get("issue"),
+        "page": item.get("page"),
+        "score": item.get("score"),  # Crossref relevance score
+    }
+
+    return metadata
+
+
+# Example usage
+#if __name__ == "__main__":
+#    title = "Attention Is All You Need"
+#    result = crossref_lookup(title)
+#    print(result)
