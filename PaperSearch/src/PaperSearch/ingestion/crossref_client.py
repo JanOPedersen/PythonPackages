@@ -385,3 +385,30 @@ def update_zotero_item(item, metadata):
     r = requests.put(url, headers=headers, json=payload)
     return r.status_code in (200, 204)
 
+
+def lookup_and_save_metadata(collection_key):
+    """
+    Given a Zotero collection key, look up missing metadata
+    for items in that collection using Crossref, and update Zotero.
+    """
+    items = get_all_items_key(collection_key, max_items=1000000)
+    print(f"Found {len(items)} Zotero items")
+
+    for item in tqdm(items, desc="Looking up metadata"):
+        data = item["data"]
+        title = data.get("title")
+        doi = data.get("DOI")
+
+        if not title:
+            continue
+
+        if doi:
+            continue  # already has DOI
+
+        metadata = crossref_lookup(title)
+        if not metadata:
+            continue
+
+        print(f"Found metadata for title: {title}")
+        update_zotero_item(item, metadata)
+        time.sleep(1)  # be polite to Crossref
