@@ -1,7 +1,8 @@
 import requests
 import urllib.parse
 from .utils import canonicalise_doi
-import urllib.parse
+from tqdm import tqdm
+import time
 
 
 # -----------------------------
